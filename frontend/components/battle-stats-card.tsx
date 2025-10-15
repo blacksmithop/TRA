@@ -27,7 +27,8 @@ interface BattleStats {
 }
 
 function StatItem({ name, stat }: { name: string; stat: Stat }) {
-  const baseValue = stat.modifier !== 0 ? Math.round(stat.value / (1 + stat.modifier / 100)) : stat.value
+  const baseValue = stat.value
+  const effectiveValue = Math.round(stat.value * (1 + stat.modifier / 100))
 
   return (
     <div className="flex items-baseline gap-3">
@@ -35,7 +36,7 @@ function StatItem({ name, stat }: { name: string; stat: Stat }) {
       <div className="flex items-baseline gap-2">
         <span className="text-xl font-semibold text-muted-foreground">{baseValue.toLocaleString()}</span>
         <span className="text-muted-foreground">→</span>
-        <span className="text-2xl font-bold text-foreground">{stat.value.toLocaleString()}</span>
+        <span className="text-2xl font-bold text-foreground">{effectiveValue.toLocaleString()}</span>
       </div>
       {stat.modifier !== 0 && (
         <TooltipProvider>
@@ -107,11 +108,14 @@ export function BattleStatsCard() {
     )
   }
 
-  const totalBase =
-    Math.round(stats.strength.value / (1 + stats.strength.modifier / 100)) +
-    Math.round(stats.defense.value / (1 + stats.defense.modifier / 100)) +
-    Math.round(stats.speed.value / (1 + stats.speed.modifier / 100)) +
-    Math.round(stats.dexterity.value / (1 + stats.dexterity.modifier / 100))
+  const totalBase = stats.strength.value + stats.defense.value + stats.speed.value + stats.dexterity.value
+
+  const totalEffective = Math.round(
+    stats.strength.value * (1 + stats.strength.modifier / 100) +
+      stats.defense.value * (1 + stats.defense.modifier / 100) +
+      stats.speed.value * (1 + stats.speed.modifier / 100) +
+      stats.dexterity.value * (1 + stats.dexterity.modifier / 100),
+  )
 
   if (isCollapsed) {
     return (
@@ -139,7 +143,7 @@ export function BattleStatsCard() {
               <div className="flex items-baseline gap-2">
                 <span className="text-lg font-semibold text-muted-foreground">{totalBase.toLocaleString()}</span>
                 <span className="text-muted-foreground">→</span>
-                <span className="text-2xl font-bold text-primary">{stats.total.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-primary">{totalEffective.toLocaleString()}</span>
               </div>
             </div>
           </div>
