@@ -8,9 +8,9 @@ import { ReviveSkillChart } from "@/components/revive-skill-chart"
 import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { fetchRevives, fetchReviveSkillCorrelation } from "@/lib/api"
 
 const USER_ID = 1712955
@@ -27,6 +27,7 @@ export default function RevivesPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [filterType, setFilterType] = useState<"all" | "given" | "received">("all")
+  const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
   const [dateFilter, setDateFilter] = useState<"all" | "7days" | "30days" | "90days">("all")
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
@@ -58,6 +59,10 @@ export default function RevivesPage() {
       filtered = filtered.filter((r) => r.target.id === USER_ID)
     }
 
+    if (outcomeFilter !== "all") {
+      filtered = filtered.filter((r) => r.result === outcomeFilter)
+    }
+
     if (dateFilter !== "all") {
       const now = Date.now() / 1000
       const daysMap = { "7days": 7, "30days": 30, "90days": 90 }
@@ -76,9 +81,14 @@ export default function RevivesPage() {
   const endIndex = startIndex + itemsPerPage
   const paginatedRevives = filteredRevives.slice(startIndex, endIndex)
 
+  const rowHeight = 55 // Height per row in pixels
+  const headerHeight = 40 // Header height
+  const minHeight = 200 // Minimum height for empty state
+  const dynamicHeight = paginatedRevives.length > 0 ? headerHeight + paginatedRevives.length * rowHeight : minHeight
+
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterType, dateFilter, itemsPerPage])
+  }, [filterType, dateFilter, itemsPerPage, outcomeFilter])
 
   if (loading) {
     return (
@@ -112,32 +122,22 @@ export default function RevivesPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-3">
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="space-y-2">
               <Label className="text-sm font-medium">Filter by Type</Label>
-              <RadioGroup value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="all" />
-                  <Label htmlFor="all" className="font-normal cursor-pointer">
-                    All Revives
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="given" id="given" />
-                  <Label htmlFor="given" className="font-normal cursor-pointer">
-                    Revives Given
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="received" id="received" />
-                  <Label htmlFor="received" className="font-normal cursor-pointer">
-                    Revives Received
-                  </Label>
-                </div>
-              </RadioGroup>
+              <Select value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Revives</SelectItem>
+                  <SelectItem value="given">Revives Given</SelectItem>
+                  <SelectItem value="received">Revives Received</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="text-sm font-medium">Time Period</Label>
               <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as typeof dateFilter)}>
                 <SelectTrigger>
@@ -150,20 +150,34 @@ export default function RevivesPage() {
                   <SelectItem value="90days">Last 90 Days</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
 
-              <div className="pt-2">
-                <Label className="text-sm font-medium">Items per Page</Label>
-                <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number.parseInt(v))}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="15">15</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Filter by Outcome</Label>
+              <Select value={outcomeFilter} onValueChange={(v) => setOutcomeFilter(v as typeof outcomeFilter)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Outcomes</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
+                  <SelectItem value="failure">Failure</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Items per Page</Label>
+              <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number.parseInt(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="15">15</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -173,17 +187,34 @@ export default function RevivesPage() {
         </CardContent>
       </Card>
 
-      {paginatedRevives.length > 0 ? (
-        <div className="space-y-4">
-          {paginatedRevives.map((revive) => (
-            <ReviveCard key={revive.id} revive={revive} />
-          ))}
-        </div>
-      ) : (
-        <div className="flex min-h-[200px] items-center justify-center">
-          <p className="text-muted-foreground">No revives found with current filters</p>
-        </div>
-      )}
+      <Card>
+        <ScrollArea style={{ height: `${dynamicHeight}px` }}>
+          <CardContent className="p-0">
+            <div className="grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10">
+              <div>Reviver</div>
+              <div>Faction</div>
+              <div>Skill</div>
+              <div>Target</div>
+              <div>Faction</div>
+              <div>Hospitalized by</div>
+              <div>Outcome</div>
+              <div>Timestamp</div>
+            </div>
+
+            {paginatedRevives.length > 0 ? (
+              <div>
+                {paginatedRevives.map((revive) => (
+                  <ReviveCard key={revive.id} revive={revive} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex min-h-[200px] items-center justify-center">
+                <p className="text-muted-foreground">No revives found with current filters</p>
+              </div>
+            )}
+          </CardContent>
+        </ScrollArea>
+      </Card>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
