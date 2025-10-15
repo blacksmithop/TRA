@@ -6,15 +6,16 @@ A analytics tool to track your revives on torn
 
 - [x] Overall revive statistics
 - [x] Tabular breakdown of revives
+- [x] Login page with token
 
 ## Planned
 
-- [ ] More analytics
-- [ ] Custom API Key to fetch revive logs, user energy and faction perks
-- [ ] Fetch all data in the frontend, send to API for processing with consent (opt-in)
+- [ ] Generate a custom API Key to fetch `/basic` and `/revives`
 - [ ] Host frontend on github pages
+- [ ] More analytics
 
-![alt text](./docs/images/revive_statistics.png)
+![Login](./docs/images/login.png)
+![Statistics](./docs/images/revive_statistics.png)
 
-![alt text](./docs/images/revive_table.png)
+![Table](./docs/images/revive_table.png)
 
