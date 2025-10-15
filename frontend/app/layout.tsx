@@ -9,7 +9,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 
 export const metadata: Metadata = {
-  title: "Torn Logbook",
+  title: "Torn Revive App",
   description: "Track your Torn City stats",
   generator: "v0.app",
 }

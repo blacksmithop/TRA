@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { fetchRevives, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
+import { RefreshCw } from "lucide-react"
 
 interface CorrelationData {
   correlation: number
@@ -45,6 +46,9 @@ export default function Home() {
   const [reviveStats, setReviveStats] = useState<ReviveStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [loadingStats, setLoadingStats] = useState(false)
+  const [loadingGraph, setLoadingGraph] = useState(false)
+  const [loadingRevivesList, setLoadingRevivesList] = useState(false)
 
   const [filterType, setFilterType] = useState<"all" | "given" | "received">("all")
   const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
@@ -172,6 +176,45 @@ export default function Home() {
     setCurrentPage(1)
   }, [filterType, dateFilter, itemsPerPage, outcomeFilter])
 
+  const reloadStatsAndGraph = async () => {
+    if (!userId) return
+
+    setLoadingStats(true)
+    setLoadingGraph(true)
+
+    try {
+      const [revivesData, correlationData, statsData] = await Promise.all([
+        fetchRevives(),
+        fetchReviveSkillCorrelation(userId),
+        fetchReviveStats(),
+      ])
+
+      setRevives(revivesData)
+      setCorrelationData(correlationData)
+      setReviveStats(statsData)
+    } catch (err) {
+      console.error("[v0] Reload error:", err)
+      setError(err instanceof Error ? err.message : "Failed to reload data")
+    } finally {
+      setLoadingStats(false)
+      setLoadingGraph(false)
+    }
+  }
+
+  const reloadRevivesList = async () => {
+    setLoadingRevivesList(true)
+
+    try {
+      const revivesData = await fetchRevives()
+      setRevives(revivesData)
+    } catch (err) {
+      console.error("[v0] Reload error:", err)
+      setError(err instanceof Error ? err.message : "Failed to reload revives")
+    } finally {
+      setLoadingRevivesList(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -202,16 +245,37 @@ export default function Home() {
         {/* First Accordion: Statistics Cards Only */}
         <AccordionItem value="statistics" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
-            <span className="text-lg font-semibold">Statistics</span>
+            <div className="flex items-center justify-between w-full pr-4">
+              <span className="text-lg font-semibold">Statistics</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  reloadStatsAndGraph()
+                }}
+                disabled={loadingStats}
+                className="h-8 w-8 p-0"
+              >
+                <RefreshCw className={`h-4 w-4 ${loadingStats ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
-            {revives && userId && (
-              <ReviveStatistics
-                revives={revives.revives}
-                userId={userId}
-                correlationData={correlationData}
-                reviveStats={reviveStats}
-              />
+            {loadingStats ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner className="h-6 w-6" />
+              </div>
+            ) : (
+              revives &&
+              userId && (
+                <ReviveStatistics
+                  revives={revives.revives}
+                  userId={userId}
+                  correlationData={correlationData}
+                  reviveStats={reviveStats}
+                />
+              )
             )}
           </AccordionContent>
         </AccordionItem>
@@ -219,17 +283,51 @@ export default function Home() {
         {/* Second Accordion: Graph Only */}
         <AccordionItem value="graph" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
-            <span className="text-lg font-semibold">Revive Skill Progress</span>
+            <div className="flex items-center justify-between w-full pr-4">
+              <span className="text-lg font-semibold">Revive Skill Progress</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  reloadStatsAndGraph()
+                }}
+                disabled={loadingGraph}
+                className="h-8 w-8 p-0"
+              >
+                <RefreshCw className={`h-4 w-4 ${loadingGraph ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
-            {revives && userId && <ReviveSkillChart revives={revives.revives} userId={userId} />}
+            {loadingGraph ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner className="h-6 w-6" />
+              </div>
+            ) : (
+              revives && userId && <ReviveSkillChart revives={revives.revives} userId={userId} />
+            )}
           </AccordionContent>
         </AccordionItem>
 
         {/* Third Accordion: Revives List */}
         <AccordionItem value="revives" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
-            <span className="text-lg font-semibold">Revives</span>
+            <div className="flex items-center justify-between w-full pr-4">
+              <span className="text-lg font-semibold">Revives</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  reloadRevivesList()
+                }}
+                disabled={loadingRevivesList}
+                className="h-8 w-8 p-0"
+              >
+                <RefreshCw className={`h-4 w-4 ${loadingRevivesList ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
             <div className="grid gap-3 md:grid-cols-4">
