@@ -1,33 +1,34 @@
 # Torn Revive
 
-A analytics tool to track your revives on torn
+An analytics tool to track your revives on Torn.
 
-## Features:
+## Features
 
-- [x] Overall revive statistics
-- [x] Tabular breakdown of revives
-- [x] Login page with token
+- [x] Login with Torn API Key (custom)
+- [x] Overall Revive Statistics: View comprehensive stats for your revive activity.
+- [x] Tabular Breakdown of Revives: Detailed table of individual revive events.
 
-## Planned
+## Planned Features
 
-- [ ] Generate a custom API Key to fetch `/basic` and `/revives`
-- [ ] Host frontend on github pages
-- [ ] More analytics
-- [ ] Revive success calculator
-- [ ] Current revive cost (based on faction perks)
+- [ ] Generate a custom API key to fetch `/basic` and `/revives` endpoints.
+- [ ] Host frontend on GitHub Pages.
+- [ ] Enhanced analytics
+- [ ] Revive success calculator.
+- [ ] Current revive cost calculator (based on faction perks).
 
 ## Screenshots
 
-### Login page
-
-![Login](./docs/images/login.png)
-
+### Login Page
+![Login Page](./docs/images/login.png | width=500)
 
 ### Statistics
+![Statistics](./docs/images/revive_statistics.png | width=500)
 
-![Statistics](./docs/images/revive_statistics.png)
+### Revives Table
+![Revives Table](./docs/images/revive_table.png | width=500)
 
-### Revives
+## Contributing
+Contributions are welcome! Please open an issue or submit a pull request with any improvements or bug fixes.
 
-![Table](./docs/images/revive_table.png)
-
+## License
+[Insert your license here, e.g., MIT License]
