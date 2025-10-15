@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'app/**'
+      - 'backend/**'
       - 'api.Dockerfile'
       - '.github/workflows/docker-image.yml'
   workflow_dispatch:
