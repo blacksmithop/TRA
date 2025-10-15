@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from app import models
 from app.core import api_config, fetch_torn_api, get_api_key
-from app.machine_learning import calculate_skill_successs_correlation
+from app.machine_learning import calculate_skill_success_correlation
 
 
 router = APIRouter(prefix="/logs", tags=["Torn API"])
@@ -61,7 +61,7 @@ async def revive_skill_correlation(
     params = {"timestamp": timestamp, "comment": comment}
     data = await fetch_torn_api(api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params)
     try:
-        corr, p_value = calculate_skill_successs_correlation(data=data, my_id=user_id)
+        corr, p_value = calculate_skill_success_correlation(data=data, my_id=user_id)
     except ValueError:
         corr, p_value = 0.0, 0.0
     return models.ReviveSkillSuccessCorrelation(correlation=corr, p_value=p_value)
