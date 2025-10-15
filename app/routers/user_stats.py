@@ -1,62 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from typing import Optional
-import httpx
 from app import models
-from app.config import EndpointConfig, TornApiConfig
-from pydantic import BaseModel
-
-router = APIRouter(prefix="/torn", tags=["Torn API"])
-api_config = TornApiConfig()
+from app.core import api_config, fetch_torn_api
 
 
-# Common headers for all requests (User-Agent)
-BASE_HEADERS = {"User-Agent": "TornApiClient/1.0"}
-
-
-# Common error response model (from OpenAPI spec)
-class ApiErrorResponse(BaseModel):
-    error: dict[str, object]
-
-
-async def fetch_torn_api(endpoint: EndpointConfig, params: dict) -> dict:
-    """Helper function to make requests to the Torn API.
-
-    Args:
-        endpoint (EndpointConfig): The endpoint configuration from TornApiConfig.
-        params (dict): Query parameters to include in the request.
-
-    Returns:
-        dict: The JSON response from the Torn API.
-
-    Raises:
-        HTTPException: If the request fails or the API returns an error.
-    """
-    headers = {**BASE_HEADERS, **api_config.get_auth_header()}
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(
-                api_config.get_endpoint_url(endpoint),
-                params={k: v for k, v in params.items() if v is not None},
-                headers=headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            try:
-                error_data = response.json()
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=ApiErrorResponse(**error_data).error,
-                )
-            except ValueError:
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail="Torn API returned an error",
-                )
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
-
+router = APIRouter(prefix="/user", tags=["Torn API"])
 
 
 @router.get("/profile", response_model=models.ProfileRoot)
@@ -84,6 +32,7 @@ async def get_user_profile(
     data = await fetch_torn_api(api_config.PROFILE_ENDPOINT, params)
     print(data)
     return models.ProfileRoot(**data)
+
 
 @router.get("/bars", response_model=models.UserBarsResponse)
 async def get_user_bars(
@@ -136,30 +85,6 @@ async def get_user_battlestats(
     data = await fetch_torn_api(api_config.BATTLESTATS_ENDPOINT, params)
     return models.UserBattleStatsResponse(**data)
 
-@router.get("/revives", response_model=models.ReviveResponse)
-async def get_user_battlestats(
-    timestamp: Optional[int] = Query(
-        None, description="Bypass cache with current timestamp"
-    ),
-    comment: Optional[str] = Query(None, description="Comment for logging"),
-):
-    """Get user revive stats.
-
-    Fetches user revive statistics
-
-    Args:
-        timestamp: Current timestamp to bypass cache.
-        comment: Comment for logging in Torn API.
-
-    Returns:
-        ReviveResponse: User revive response
-
-    Raises:
-        HTTPException: If the API request fails or returns an error.
-    """
-    params = {"timestamp": timestamp, "comment": comment}
-    data = await fetch_torn_api(api_config.REVIVES_ENDPOINT, params)
-    return models.ReviveResponse(**data)
 
 @router.get("/cooldowns", response_model=models.UserCooldownsResponse)
 async def get_user_cooldowns(
@@ -185,6 +110,7 @@ async def get_user_cooldowns(
     params = {"timestamp": timestamp, "comment": comment}
     data = await fetch_torn_api(api_config.COOLDOWNS_ENDPOINT, params)
     return models.UserCooldownsResponse(**data)
+
 
 # @router.get("/attacks", response_model=models.FactionAttacksResponse)
 # async def get_user_attacks(
