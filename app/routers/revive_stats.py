@@ -9,7 +9,7 @@ router = APIRouter(prefix="/logs", tags=["Torn API"])
 
 
 @router.get("/revives", response_model=models.ReviveResponse)
-async def get_user_battlestats(
+async def revives(
     timestamp: Optional[int] = Query(
         None, description="Bypass cache with current timestamp"
     ),
@@ -35,7 +35,8 @@ async def get_user_battlestats(
 
 
 @router.get("/revive_skill_correlation", response_model=models.ReviveSkillSuccessCorrelation)
-async def get_user_battlestats(
+async def revive_skill_correlation(
+    user_id: Optional[int] = None,
     timestamp: Optional[int] = Query(
         None, description="Bypass cache with current timestamp"
     ),
@@ -58,7 +59,7 @@ async def get_user_battlestats(
     params = {"timestamp": timestamp, "comment": comment}
     data = await fetch_torn_api(api_config.REVIVES_ENDPOINT, params)
     try:
-        corr, p_value = calculate_skill_successs_correlation(data=data, my_id=1712955)
+        corr, p_value = calculate_skill_successs_correlation(data=data, my_id=user_id)
     except ValueError:
         corr, p_value = 0.0, 0.0
     return models.ReviveSkillSuccessCorrelation(correlation=corr, p_value=p_value)
