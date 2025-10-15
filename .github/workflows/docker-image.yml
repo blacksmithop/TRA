@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'app/**'
+      - 'api.Dockerfile'
       - '.github/workflows/docker-image.yml'
   workflow_dispatch:
 
