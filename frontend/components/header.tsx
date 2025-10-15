@@ -2,8 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Home, HeartPulse } from "lucide-react"
 
 export function Header() {
   const pathname = usePathname()
@@ -19,19 +17,7 @@ export function Header() {
             <h1 className="text-xl font-bold text-foreground">Torn Revive</h1>
           </Link>
 
-          <div className="flex flex-1 items-center justify-end gap-2">
-            <Button variant="ghost" size="icon" asChild className={pathname === "/" ? "bg-accent" : ""}>
-              <Link href="/" title="Dashboard">
-                <Home className="h-5 w-5" />
-              </Link>
-            </Button>
-
-            <Button variant="ghost" size="icon" asChild className={pathname === "/revives" ? "bg-accent" : ""}>
-              <Link href="/revives" title="Revives">
-                <HeartPulse className="h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
+          <div className="flex flex-1 items-center justify-end" />
         </div>
       </div>
     </header>

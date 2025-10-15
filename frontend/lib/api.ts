@@ -1,5 +1,5 @@
 /**
- * API configuration for Torn Logbook
+ * API configuration for Torn Revives
  *
  * Set the NEXT_PUBLIC_API_URL environment variable to configure the backend API URL.
  * Default: http://localhost:8000
@@ -28,14 +28,10 @@ export async function fetchBars() {
   return fetchTornAPI("/user/bars")
 }
 
-export async function fetchBattleStats() {
-  return fetchTornAPI("/user/battlestats")
-}
-
 export async function fetchRevives() {
   return fetchTornAPI("/logs/revives")
 }
 
-export async function fetchReviveSkillCorrelation() {
-  return fetchTornAPI("/logs/revive_skill_correlation")
+export async function fetchReviveSkillCorrelation(userId: number) {
+  return fetchTornAPI(`/logs/revive_skill_correlation?user_id=${userId}`)
 }
