@@ -22,13 +22,6 @@ class TornApiConfig:
     authentication details for API requests.
 
     Attributes:
-        BASE_URL (str): The base URL for the Torn API (https://api.torn.com/v2).
-        ATTACKS_ENDPOINT (EndpointConfig): Configuration for /user/attacks endpoint.
-        ATTACKS_FULL_ENDPOINT (EndpointConfig): Configuration for /user/attacksfull endpoint.
-        BARS_ENDPOINT (EndpointConfig): Configuration for /user/bars endpoint.
-        BATTLESTATS_ENDPOINT (EndpointConfig): Configuration for /user/battlestats endpoint.
-        BOUNTIES_ENDPOINT (EndpointConfig): Configuration for /user/bounties endpoint.
-        COOLDOWNS_ENDPOINT (EndpointConfig): Configuration for /user/cooldowns endpoint.
 
     Example:
         config = TornApiConfig()
@@ -43,48 +36,12 @@ class TornApiConfig:
         access_level="Public"
     )
     """Endpoint for fetching basic user profile (requires Public access)."""
-        
-    PROFILE_ENDPOINT: EndpointConfig = EndpointConfig(
-        path="user/profile",
-        access_level="Public"
-    )
-    """Endpoint for fetching user profile (requires Public access)."""
-    
-    ATTACKS_ENDPOINT: EndpointConfig = EndpointConfig(
-        path="user/attacks",
-        access_level="Limited"
-    )
-    """Endpoint for fetching detailed user attacks (requires Limited access)."""
-    
-    ATTACKS_FULL_ENDPOINT: EndpointConfig = EndpointConfig(
-        path="user/attacksfull",
-        access_level="Limited"
-    )
-    """Endpoint for fetching simplified user attacks (requires Limited access)."""
-    
+
     BARS_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/bars",
         access_level="Minimal"
     )
     """Endpoint for fetching user bars information (requires Minimal access)."""
-    
-    BATTLESTATS_ENDPOINT: EndpointConfig = EndpointConfig(
-        path="user/battlestats",
-        access_level="Limited"
-    )
-    """Endpoint for fetching user battle stats (requires Limited access)."""
-    
-    BOUNTIES_ENDPOINT: EndpointConfig = EndpointConfig(
-        path="user/bounties",
-        access_level="Public"
-    )
-    """Endpoint for fetching user bounties (requires Public access)."""
-    
-    COOLDOWNS_ENDPOINT: EndpointConfig = EndpointConfig(
-        path="user/cooldowns",
-        access_level="Minimal"
-    )
-    """Endpoint for fetching user cooldowns (requires Minimal access)."""
     
     REVIVES_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/revives",
@@ -92,6 +49,12 @@ class TornApiConfig:
     )
     """Endpoint for fetching user revives (requires Minimal access)."""
 
+    REVIVES_STATISTICS_ENDPOINT: EndpointConfig = EndpointConfig(
+        path="user/personalstats",
+        access_level="Public"
+    )
+    """Endpoint for fetching user revive statistics (requires Public access)."""
+    
     def __init__(self, base_url: Optional[str] = None):
         """Initialize the TornApiConfig with an optional custom base URL.
 

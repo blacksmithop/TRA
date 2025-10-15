@@ -16,6 +16,8 @@ An analytics tool to track your revives on Torn.
 - [ ] Revive success calculator.
 - [ ] Current revive cost calculator (based on faction perks).
 - [ ] Include success percentage if possible
+- [ ] Fetch older logs
+- [ ] Older players may not have skill shown correctly
 
 ## Screenshots
 
