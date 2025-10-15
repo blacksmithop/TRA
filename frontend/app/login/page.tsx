@@ -60,7 +60,7 @@ export default function LoginPage() {
 
           <div className="text-center space-y-3">
             <a
-              href="https://www.torn.com/preferences.php#tab=api?step=addNewKey&user=basic,personalstats,bars,revives&title=TornReviveApp"
+              href="https://www.torn.com/preferences.php#tab=api?step=addNewKey&user=basic,personalstats,bars,revives,revivesfull&title=TornReviveApp"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-primary hover:underline block"
@@ -77,6 +77,9 @@ export default function LoginPage() {
               </Badge>
               <Badge variant="secondary" className="rounded-full">
                 revives
+              </Badge>
+              <Badge variant="secondary" className="rounded-full">
+                revivesfull
               </Badge>
               <Badge variant="secondary" className="rounded-full">
                 bars

@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { fetchRevives, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
+import { fetchRevives, fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
 import { RefreshCw } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 interface CorrelationData {
   correlation: number
@@ -42,6 +43,7 @@ export default function Home() {
   const router = useRouter()
   const [userId, setUserId] = useState<number | undefined>(undefined)
   const [revives, setRevives] = useState<RevivesResponse | null>(null)
+  const [tableRevives, setTableRevives] = useState<RevivesResponse | null>(null)
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null)
   const [reviveStats, setReviveStats] = useState<ReviveStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,6 +57,7 @@ export default function Home() {
   const [dateFilter, setDateFilter] = useState<"all" | "7days" | "30days" | "90days">("all")
   const [itemsPerPage, setItemsPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showFullRevives, setShowFullRevives] = useState(false)
 
   useEffect(() => {
     if (!hasApiKey()) {
@@ -119,6 +122,7 @@ export default function Home() {
 
         if (isMounted) {
           setRevives(revivesData)
+          setTableRevives(revivesData)
           setCorrelationData(correlationData)
           setReviveStats(statsData)
           setLoading(false)
@@ -140,9 +144,9 @@ export default function Home() {
   }, [userId])
 
   const getFilteredRevives = (): Revive[] => {
-    if (!revives || !userId) return []
+    if (!tableRevives || !userId) return []
 
-    let filtered = [...revives.revives]
+    let filtered = [...tableRevives.revives]
 
     if (filterType === "given") {
       filtered = filtered.filter((r) => r.reviver.id === userId)
@@ -205,11 +209,36 @@ export default function Home() {
     setLoadingRevivesList(true)
 
     try {
-      const revivesData = await fetchRevives()
-      setRevives(revivesData)
+      const revivesData = showFullRevives ? await fetchRevivesFull() : await fetchRevives()
+      setTableRevives(revivesData)
+
+      if (!showFullRevives) {
+        setRevives(revivesData)
+      }
     } catch (err) {
       console.error("[v0] Reload error:", err)
       setError(err instanceof Error ? err.message : "Failed to reload revives")
+    } finally {
+      setLoadingRevivesList(false)
+    }
+  }
+
+  const handleFullRevivesToggle = async (checked: boolean) => {
+    setShowFullRevives(checked)
+    setLoadingRevivesList(true)
+
+    try {
+      const revivesData = checked ? await fetchRevivesFull() : await fetchRevives()
+      setTableRevives(revivesData)
+
+      if (!checked) {
+        setRevives(revivesData)
+      }
+
+      setCurrentPage(1)
+    } catch (err) {
+      console.error("[v0] Toggle error:", err)
+      setError(err instanceof Error ? err.message : "Failed to load revives")
     } finally {
       setLoadingRevivesList(false)
     }
@@ -242,7 +271,6 @@ export default function Home() {
       </div>
 
       <Accordion type="multiple" defaultValue={["statistics", "graph", "revives"]} className="space-y-4">
-        {/* First Accordion: Statistics Cards Only */}
         <AccordionItem value="statistics" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
@@ -288,7 +316,6 @@ export default function Home() {
           </AccordionContent>
         </AccordionItem>
 
-        {/* Second Accordion: Graph Only */}
         <AccordionItem value="graph" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
@@ -326,7 +353,6 @@ export default function Home() {
           </AccordionContent>
         </AccordionItem>
 
-        {/* Third Accordion: Revives List */}
         <AccordionItem value="revives" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
@@ -354,6 +380,21 @@ export default function Home() {
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
+            <div className="flex items-center gap-3 pb-2 border-b">
+              <Switch
+                id="full-revives"
+                checked={showFullRevives}
+                onCheckedChange={handleFullRevivesToggle}
+                disabled={loadingRevivesList}
+              />
+              <Label htmlFor="full-revives" className="text-sm font-medium cursor-pointer">
+                Full
+                <span className="text-xs text-muted-foreground ml-2">
+                  (Shows all revives with IDs instead of names)
+                </span>
+              </Label>
+            </div>
+
             <div className="flex items-end gap-2 flex-wrap">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Filter by Type</Label>
@@ -472,10 +513,16 @@ export default function Home() {
             <Card>
               <ScrollArea className="h-[600px]">
                 <CardContent className="p-0">
-                  <div className="grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10">
+                  <div
+                    className={
+                      showFullRevives
+                        ? "grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+                        : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+                    }
+                  >
                     <div>Reviver</div>
                     <div>Faction</div>
-                    <div>Skill</div>
+                    {!showFullRevives && <div>Skill</div>}
                     <div>Target</div>
                     <div>Faction</div>
                     <div>Hospitalized by</div>
@@ -487,7 +534,7 @@ export default function Home() {
                   {paginatedRevives.length > 0 ? (
                     <div>
                       {paginatedRevives.map((revive) => (
-                        <ReviveCard key={revive.id} revive={revive} />
+                        <ReviveCard key={revive.id} revive={revive} showFullMode={showFullRevives} />
                       ))}
                     </div>
                   ) : (

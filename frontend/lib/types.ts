@@ -40,15 +40,17 @@ export interface ReviveFaction {
 
 export interface Reviver {
   id: number
-  name: string
-  faction: ReviveFaction | null
+  name: string | null
+  faction?: ReviveFaction | null
+  faction_id?: number | null
   skill: number | null
 }
 
 export interface ReviveTarget {
   id: number
-  name: string
-  faction: ReviveFaction | null
+  name: string | null
+  faction?: ReviveFaction | null
+  faction_id?: number | null
   hospital_reason: string
   early_discharge: boolean
   last_action: number

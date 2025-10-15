@@ -4,9 +4,10 @@ import { Activity, Minus } from "lucide-react"
 
 interface ReviveCardProps {
   revive: Revive
+  showFullMode?: boolean
 }
 
-export function ReviveCard({ revive }: ReviveCardProps) {
+export function ReviveCard({ revive, showFullMode = false }: ReviveCardProps) {
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleString("en-US", {
       month: "short",
@@ -26,17 +27,34 @@ export function ReviveCard({ revive }: ReviveCardProps) {
   }
 
   return (
-    <div className="grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50">
+    <div
+      className={
+        showFullMode
+          ? "grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50"
+          : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50"
+      }
+    >
       {/* Reviver */}
       <div className="truncate">
-        <a
-          href={getTornProfileUrl(revive.reviver.id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-foreground hover:underline font-medium"
-        >
-          {revive.reviver.name}
-        </a>
+        {revive.reviver.name ? (
+          <a
+            href={getTornProfileUrl(revive.reviver.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:underline font-medium"
+          >
+            {revive.reviver.name}
+          </a>
+        ) : (
+          <a
+            href={getTornProfileUrl(revive.reviver.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:underline font-medium"
+          >
+            {revive.reviver.id}
+          </a>
+        )}
       </div>
 
       {/* Reviver Faction */}
@@ -50,26 +68,48 @@ export function ReviveCard({ revive }: ReviveCardProps) {
           >
             {revive.reviver.faction.name}
           </a>
+        ) : revive.reviver.faction_id ? (
+          <a
+            href={getTornFactionUrl(revive.reviver.faction_id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline hover:text-foreground transition-colors"
+          >
+            {revive.reviver.faction_id}
+          </a>
         ) : (
           "-"
         )}
       </div>
 
       {/* Skill */}
-      <div className="text-muted-foreground">
-        {revive.reviver.skill !== null ? revive.reviver.skill.toFixed(2) : "-"}
-      </div>
+      {!showFullMode && (
+        <div className="text-muted-foreground">
+          {revive.reviver.skill != null ? revive.reviver.skill.toFixed(2) : "-"}
+        </div>
+      )}
 
       {/* Target */}
       <div className="truncate">
-        <a
-          href={getTornProfileUrl(revive.target.id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-foreground hover:underline font-medium"
-        >
-          {revive.target.name}
-        </a>
+        {revive.target.name ? (
+          <a
+            href={getTornProfileUrl(revive.target.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:underline font-medium"
+          >
+            {revive.target.name}
+          </a>
+        ) : (
+          <a
+            href={getTornProfileUrl(revive.target.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:underline font-medium"
+          >
+            {revive.target.id}
+          </a>
+        )}
       </div>
 
       {/* Target Faction */}
@@ -82,6 +122,15 @@ export function ReviveCard({ revive }: ReviveCardProps) {
             className="hover:underline hover:text-foreground transition-colors"
           >
             {revive.target.faction.name}
+          </a>
+        ) : revive.target.faction_id ? (
+          <a
+            href={getTornFactionUrl(revive.target.faction_id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline hover:text-foreground transition-colors"
+          >
+            {revive.target.faction_id}
           </a>
         ) : (
           "-"
