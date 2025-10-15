@@ -39,7 +39,7 @@ async def revives(
     )
     return models.ReviveResponse(**data)
 
-@router.get("/revivesfull", response_model=models.ReviveResponse)
+@router.get("/revivesfull", response_model=models.ReviveResponseFull)
 async def revives(
     timestamp: Optional[int] = Query(
         None, description="Bypass cache with current timestamp"
@@ -47,7 +47,7 @@ async def revives(
     comment: Optional[str] = Query(None, description="Comment for logging"),
     api_key: str = Depends(get_api_key),
 ):
-    """Get user revive stats.
+    """Get (full) user revive stats.
 
     Fetches user revive statistics
 
@@ -56,7 +56,7 @@ async def revives(
         comment: Comment for logging in Torn API.
 
     Returns:
-        ReviveResponse: User revive response
+        ReviveResponseFull: User revive (full) response
 
     Raises:
         HTTPException: If the API request fails or returns an error.
@@ -65,7 +65,7 @@ async def revives(
     data = await fetch_torn_api(
         api_key=api_key, endpoint=api_config.REVIVES_FULL_ENDPOINT, params=params
     )
-    return models.ReviveResponse(**data)
+    return models.ReviveResponseFull(**data)
 
 
 @router.get("/revive_stats", response_model=models.ReviveStats)

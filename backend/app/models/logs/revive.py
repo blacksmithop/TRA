@@ -1,29 +1,64 @@
 from pydantic import BaseModel
-from typing import List, Literal, Optional
-from datetime import datetime
+from typing import Optional, List, Dict
+from typing import Literal
 
 
-class Faction(BaseModel):
+__all__ = [
+    "ReviveResponse",
+    "ReviveResponseFull",
+    "ReviveChance",
+    "PersonalStat",
+    "ReviveStats",
+    "ReviveSkillSuccessCorrelation"
+]
+
+# Models for ReviveResponse (dataset with nested faction)
+class FactionFull(BaseModel):
     id: Optional[int]
     name: Optional[str]
 
-
-class Reviver(BaseModel):
+class ReviverFull(BaseModel):
     id: int
-    name: str
-    faction: Optional[Faction]
+    name: Optional[str]
+    faction: Optional[FactionFull]
     skill: Optional[float]
 
-
-class Target(BaseModel):
+class TargetFull(BaseModel):
     id: int
-    name: Optional[str] = None # /revivesfull doesn't include name
-    faction: Optional[Faction]
+    name: Optional[str]
+    faction: Optional[FactionFull]
     hospital_reason: str
     early_discharge: bool
     last_action: int
     online_status: str
 
+class ReviveFull(BaseModel):
+    id: int
+    reviver: ReviverFull
+    target: TargetFull
+    success_chance: float
+    result: str
+    timestamp: int
+
+class MetadataFull(BaseModel):
+    links: Dict[str, Optional[str]]
+
+class ReviveResponse(BaseModel):
+    revives: List[ReviveFull]
+    _metadata: MetadataFull
+
+# Models for ReviveResponseFull (dataset with faction_id)
+class Reviver(BaseModel):
+    id: int
+    faction_id: Optional[int]
+
+class Target(BaseModel):
+    id: int
+    faction_id: Optional[int]
+    hospital_reason: str
+    early_discharge: bool
+    last_action: int
+    online_status: str
 
 class Revive(BaseModel):
     id: int
@@ -33,32 +68,25 @@ class Revive(BaseModel):
     result: str
     timestamp: int
 
-
 class Metadata(BaseModel):
-    links: dict[str, Optional[str]]
+    links: Dict[str, Optional[str]]
 
-
-class ReviveResponse(BaseModel):
+class ReviveResponseFull(BaseModel):
     revives: List[Revive]
     _metadata: Metadata
 
-
-class ReviveSkillSuccessCorrelation(BaseModel):
-    correlation: float
-    p_value: float
-
+class ReviveChance(BaseModel):
+    target_score: float
+    revive_chance: float
 
 class PersonalStat(BaseModel):
     name: Literal["reviveskill", "revives", "revivesreceived"]
     value: int
     timestamp: int
 
-
 class ReviveStats(BaseModel):
     personalstats: List[PersonalStat]
 
-class ReviveChance(BaseModel):
-    target_score: float
-    revive_chance: float
-    
-__all__ = ["PersonalStat", "ReviveChance", "ReviveResponse", "ReviveSkillSuccessCorrelation", "ReviveStats"]
+class ReviveSkillSuccessCorrelation(BaseModel):
+    correlation: float
+    p_value: float
