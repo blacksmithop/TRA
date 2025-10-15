@@ -1,12 +1,6 @@
-/**
- * API configuration for Torn Logbook
- *
- * Set the NEXT_PUBLIC_API_URL environment variable to configure the backend API URL.
- * Default: http://localhost:8000
- */
-import { getApiKey } from "./storage" // Import storage utilities to get API key from localStorage
+import { getApiKey } from "./storage"
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://tornrevive.abhinavkm.com"
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 /**
  * Fetch wrapper for Torn API endpoints
