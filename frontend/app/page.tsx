@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { fetchRevives, fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
+import { fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
+import { loadRevivesProgressively } from "@/lib/progressive-loader"
 import { RefreshCw } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
@@ -51,10 +52,11 @@ export default function Home() {
   const [loadingStats, setLoadingStats] = useState(false)
   const [loadingGraph, setLoadingGraph] = useState(false)
   const [loadingRevivesList, setLoadingRevivesList] = useState(false)
-
-  const [filterType, setFilterType] = useState<"all" | "given" | "received">("all")
-  const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
-  const [dateFilter, setDateFilter] = useState<"all" | "7days" | "30days" | "90days">("all")
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [totalRevivesLoaded, setTotalRevivesLoaded] = useState(0)
+  const [filterType, setFilterType] = useState("all")
+  const [outcomeFilter, setOutcomeFilter] = useState("all")
+  const [dateFilter, setDateFilter] = useState("all")
   const [itemsPerPage, setItemsPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [showFullRevives, setShowFullRevives] = useState(false)
@@ -109,29 +111,46 @@ export default function Home() {
 
     const loadRevivesData = async () => {
       try {
-        console.log("[v0] Fetching revives, correlation, and stats with userId:", userId)
+        console.log("[v0] Fetching correlation and stats with userId:", userId)
 
-        const [revivesData, correlationData, statsData] = await Promise.all([
-          fetchRevives(),
+        const [correlationData, statsData] = await Promise.all([
           fetchReviveSkillCorrelation(userId),
           fetchReviveStats(),
         ])
 
-        console.log("[v0] Data fetched successfully")
-        console.log("[v0] Revive stats:", statsData)
+        console.log("[v0] Correlation and stats fetched successfully")
 
         if (isMounted) {
-          setRevives(revivesData)
-          setTableRevives(revivesData)
           setCorrelationData(correlationData)
           setReviveStats(statsData)
           setLoading(false)
+          setIsLoadingMore(true)
+          loadRevivesProgressively({
+            onBatchLoaded: (allRevives, isComplete) => {
+              if (!isMounted) return
+              const revivesData: RevivesResponse = { revives: allRevives }
+              setRevives(revivesData)
+              setTableRevives(revivesData)
+              setTotalRevivesLoaded(allRevives.length)
+              if (isComplete) {
+                console.log("[v0] All revives loaded. Total:", allRevives.length)
+                setIsLoadingMore(false)
+              }
+            },
+            onError: (err) => {
+              if (!isMounted) return
+              console.error("[v0] Progressive load error:", err)
+              setError(err.message)
+              setIsLoadingMore(false)
+            },
+          })
         }
       } catch (err) {
         console.error("[v0] Data fetch error:", err)
         if (isMounted) {
           setError(err instanceof Error ? err.message : "Failed to load revives data")
           setLoading(false)
+          setIsLoadingMore(false)
         }
       }
     }
@@ -187,15 +206,29 @@ export default function Home() {
     setLoadingGraph(true)
 
     try {
-      const [revivesData, correlationData, statsData] = await Promise.all([
-        fetchRevives(),
-        fetchReviveSkillCorrelation(userId),
-        fetchReviveStats(),
-      ])
+      const [correlationData, statsData] = await Promise.all([fetchReviveSkillCorrelation(userId), fetchReviveStats()])
 
-      setRevives(revivesData)
       setCorrelationData(correlationData)
       setReviveStats(statsData)
+
+      setIsLoadingMore(true)
+      loadRevivesProgressively({
+        onBatchLoaded: (allRevives, isComplete) => {
+          const revivesData: RevivesResponse = { revives: allRevives }
+          setRevives(revivesData)
+          setTableRevives(revivesData)
+          setTotalRevivesLoaded(allRevives.length)
+
+          if (isComplete) {
+            setIsLoadingMore(false)
+          }
+        },
+        onError: (err) => {
+          console.error("[v0] Progressive load error:", err)
+          setError(err.message)
+          setIsLoadingMore(false)
+        },
+      })
     } catch (err) {
       console.error("[v0] Reload error:", err)
       setError(err instanceof Error ? err.message : "Failed to reload data")
@@ -209,11 +242,28 @@ export default function Home() {
     setLoadingRevivesList(true)
 
     try {
-      const revivesData = showFullRevives ? await fetchRevivesFull() : await fetchRevives()
-      setTableRevives(revivesData)
+      if (showFullRevives) {
+        const revivesData = await fetchRevivesFull()
+        setTableRevives(revivesData)
+      } else {
+        setIsLoadingMore(true)
+        loadRevivesProgressively({
+          onBatchLoaded: (allRevives, isComplete) => {
+            const revivesData: RevivesResponse = { revives: allRevives }
+            setRevives(revivesData)
+            setTableRevives(revivesData)
+            setTotalRevivesLoaded(allRevives.length)
 
-      if (!showFullRevives) {
-        setRevives(revivesData)
+            if (isComplete) {
+              setIsLoadingMore(false)
+            }
+          },
+          onError: (err) => {
+            console.error("[v0] Progressive load error:", err)
+            setError(err.message)
+            setIsLoadingMore(false)
+          },
+        })
       }
     } catch (err) {
       console.error("[v0] Reload error:", err)
@@ -228,11 +278,28 @@ export default function Home() {
     setLoadingRevivesList(true)
 
     try {
-      const revivesData = checked ? await fetchRevivesFull() : await fetchRevives()
-      setTableRevives(revivesData)
+      if (checked) {
+        const revivesData = await fetchRevivesFull()
+        setTableRevives(revivesData)
+      } else {
+        setIsLoadingMore(true)
+        loadRevivesProgressively({
+          onBatchLoaded: (allRevives, isComplete) => {
+            const revivesData: RevivesResponse = { revives: allRevives }
+            setRevives(revivesData)
+            setTableRevives(revivesData)
+            setTotalRevivesLoaded(allRevives.length)
 
-      if (!checked) {
-        setRevives(revivesData)
+            if (isComplete) {
+              setIsLoadingMore(false)
+            }
+          },
+          onError: (err) => {
+            console.error("[v0] Progressive load error:", err)
+            setError(err.message)
+            setIsLoadingMore(false)
+          },
+        })
       }
 
       setCurrentPage(1)
@@ -356,7 +423,14 @@ export default function Home() {
         <AccordionItem value="revives" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
-              <span className="text-lg font-semibold">Revives</span>
+              <span className="text-lg font-semibold">
+                Revives
+                {isLoadingMore && (
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    (Loading... {totalRevivesLoaded} loaded)
+                  </span>
+                )}
+              </span>
               <div
                 role="button"
                 tabIndex={0}
@@ -398,7 +472,7 @@ export default function Home() {
             <div className="flex items-end gap-2 flex-wrap">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Filter by Type</Label>
-                <Select value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
+                <Select value={filterType} onValueChange={setFilterType}>
                   <SelectTrigger className="w-[160px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -412,7 +486,7 @@ export default function Home() {
 
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Time Period</Label>
-                <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as typeof dateFilter)}>
+                <Select value={dateFilter} onValueChange={setDateFilter}>
                   <SelectTrigger className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -427,7 +501,7 @@ export default function Home() {
 
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Filter by Outcome</Label>
-                <Select value={outcomeFilter} onValueChange={(v) => setOutcomeFilter(v as typeof outcomeFilter)}>
+                <Select value={outcomeFilter} onValueChange={setOutcomeFilter}>
                   <SelectTrigger className="w-[150px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -458,6 +532,12 @@ export default function Home() {
               <div className="text-sm text-muted-foreground">
                 Showing {startIndex + 1}-{Math.min(endIndex, filteredRevives.length)} of {filteredRevives.length}{" "}
                 revives
+                {isLoadingMore && !showFullRevives && (
+                  <span className="ml-2 inline-flex items-center gap-1">
+                    <Spinner className="h-3 w-3" />
+                    <span>Loading more...</span>
+                  </span>
+                )}
               </div>
 
               {totalPages > 1 && (
