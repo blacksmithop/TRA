@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { hasApiKey } from "../lib/storage"
+import { hasApiKey } from "@/lib/storage"
 import type { RevivesResponse, Revive } from "@/lib/types"
 import { ReviveCard } from "@/components/revive-card"
 import { ReviveStatistics } from "@/components/revive-statistics"
@@ -191,21 +191,30 @@ export default function Home() {
         <p className="text-muted-foreground">Track your Torn City revive history</p>
       </div>
 
-      <Accordion type="multiple" defaultValue={["statistics", "revives"]} className="space-y-4">
+      <Accordion type="multiple" defaultValue={["statistics", "graph", "revives"]} className="space-y-4">
+        {/* First Accordion: Statistics Cards Only */}
         <AccordionItem value="statistics" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
             <span className="text-lg font-semibold">Statistics</span>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             {revives && userId && (
-              <div className="grid gap-4 lg:grid-cols-[1fr_1.5fr]">
-                <ReviveStatistics revives={revives.revives} userId={userId} correlationData={correlationData} />
-                <ReviveSkillChart revives={revives.revives} userId={userId} />
-              </div>
+              <ReviveStatistics revives={revives.revives} userId={userId} correlationData={correlationData} />
             )}
           </AccordionContent>
         </AccordionItem>
 
+        {/* Second Accordion: Graph Only */}
+        <AccordionItem value="graph" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <span className="text-lg font-semibold">Revive Skill Progress</span>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            {revives && userId && <ReviveSkillChart revives={revives.revives} userId={userId} />}
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Third Accordion: Revives List */}
         <AccordionItem value="revives" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
             <span className="text-lg font-semibold">Revives</span>
@@ -329,13 +338,14 @@ export default function Home() {
             <Card>
               <ScrollArea className="h-[600px]">
                 <CardContent className="p-0">
-                  <div className="grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10">
+                  <div className="grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10">
                     <div>Reviver</div>
                     <div>Faction</div>
                     <div>Skill</div>
                     <div>Target</div>
                     <div>Faction</div>
                     <div>Hospitalized by</div>
+                    <div>Chance</div>
                     <div>Outcome</div>
                     <div>Timestamp</div>
                   </div>

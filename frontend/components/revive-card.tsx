@@ -26,7 +26,7 @@ export function ReviveCard({ revive }: ReviveCardProps) {
   }
 
   return (
-    <div className="grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50">
+    <div className="grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50">
       {/* Reviver */}
       <div className="truncate">
         <a
@@ -90,6 +90,9 @@ export function ReviveCard({ revive }: ReviveCardProps) {
 
       {/* Hospitalized by */}
       <div className="truncate text-muted-foreground">{revive.target.hospital_reason}</div>
+
+      {/* Success Chance */}
+      <div className="text-muted-foreground font-medium">{revive.success_chance}%</div>
 
       {/* Outcome */}
       <div className="flex items-center gap-1.5">

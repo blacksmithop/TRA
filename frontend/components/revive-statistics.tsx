@@ -33,6 +33,16 @@ export function ReviveStatistics({ revives, userId, correlationData }: ReviveSta
 
   const avgSuccessChance = totalGiven > 0 ? revivesGiven.reduce((sum, r) => sum + r.success_chance, 0) / totalGiven : 0
 
+  const sortedRevives = [...revivesGiven].sort((a, b) => b.timestamp - a.timestamp)
+  let currentStreak = 0
+  for (const revive of sortedRevives) {
+    if (revive.result === "success") {
+      currentStreak++
+    } else {
+      break
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -83,7 +93,7 @@ export function ReviveStatistics({ revives, userId, correlationData }: ReviveSta
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Average Success Chance</CardTitle>
@@ -101,6 +111,22 @@ export function ReviveStatistics({ revives, userId, correlationData }: ReviveSta
           <CardContent>
             <div className="text-2xl font-bold">{endSkill?.toFixed(2) || "N/A"}</div>
             <p className="text-xs text-muted-foreground">Latest recorded skill level</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Success Streak</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-500">{currentStreak}</div>
+            <p className="text-xs text-muted-foreground">
+              {currentStreak === 0
+                ? "No current streak"
+                : currentStreak === 1
+                  ? "Current successful revive"
+                  : "Consecutive successful revives"}
+            </p>
           </CardContent>
         </Card>
 
