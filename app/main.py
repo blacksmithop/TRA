@@ -12,10 +12,10 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Allow requests from localhost:3000
+    allow_origins=["http://localhost:3000", "https://blacksmithop.github.io"],
     allow_credentials=True,                   # Allow cookies and auth headers
-    allow_methods=["GET"],                    # Allow only GET requests (based on router)
-    allow_headers=["*"],                      # Allow all headers (e.g., Authorization, Accept)
+    allow_methods=["GET", "OPTIONS"],                    # Allow only GET requests (based on router)
+    allow_headers=["Authorization", "Accept", "Content-Type"],                      # Allow all headers (e.g., Authorization, Accept)
 )
 
 # Include the Torn API router
