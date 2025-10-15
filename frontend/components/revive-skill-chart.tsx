@@ -27,12 +27,12 @@ export function ReviveSkillChart({ revives, userId }: ReviveSkillChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Revive Skill Progress</CardTitle>
+      <Card className="h-full">
+        <CardHeader className="pb-1 pt-3 px-4">
+          <CardTitle className="text-sm">Revive Skill Progress</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+        <CardContent className="px-4 pb-3">
+          <div className="flex h-[300px] items-center justify-center text-muted-foreground text-sm">
             No skill data available
           </div>
         </CardContent>
@@ -41,11 +41,11 @@ export function ReviveSkillChart({ revives, userId }: ReviveSkillChartProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Revive Skill Progress</CardTitle>
+    <Card className="h-full">
+      <CardHeader className="pb-1 pt-3 px-4">
+        <CardTitle className="text-sm">Revive Skill Progress</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-3">
         <ChartContainer
           config={{
             skill: {

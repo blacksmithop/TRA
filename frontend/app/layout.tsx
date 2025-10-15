@@ -5,8 +5,8 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
-import { Header } from "../components/header"
-import { Footer } from "../components/footer"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 
 export const metadata: Metadata = {
   title: "Torn Logbook",
@@ -21,9 +21,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} flex min-h-screen flex-col`}>
         <Header />
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <main className="flex-1">
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        </main>
         <Footer />
         <Analytics />
       </body>
