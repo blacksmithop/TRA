@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import user_stats
+from app.routers import user_stats, revive_stats
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -20,6 +20,7 @@ app.add_middleware(
 
 # Include the Torn API router
 app.include_router(user_stats.router)
+app.include_router(revive_stats.router)
 
 if __name__ == "__main__":
     import uvicorn
