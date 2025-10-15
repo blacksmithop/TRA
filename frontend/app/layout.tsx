@@ -7,11 +7,15 @@ import { Suspense } from "react"
 import "./globals.css"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { getLogoUrl } from "@/lib/api"
 
 export const metadata: Metadata = {
   title: "Torn Revive App",
-  description: "Track your Torn City stats",
+  description: "Track your Torn City revives",
   generator: "v0.app",
+  icons: {
+    icon: getLogoUrl(),
+  },
 }
 
 export default function RootLayout({

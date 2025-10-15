@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { removeApiKey } from "@/lib/storage"
+import { getLogoUrl } from "@/lib/api"
 import { Heart } from "lucide-react"
 
 export function Header() {
@@ -23,7 +25,13 @@ export function Header() {
           <div className="flex-1" />
 
           <Link href="/" className="flex items-center gap-3">
-            <div className="text-4xl">⚕️</div>
+            <Image
+              src={getLogoUrl() || "/placeholder.svg"}
+              alt="Torn Revive App Logo"
+              width={62}
+              height={62}
+              unoptimized
+            />
             <h1 className="text-3xl font-bold text-foreground">Torn Revive App</h1>
           </Link>
 

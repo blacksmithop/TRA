@@ -145,16 +145,28 @@ export function ReviveSkillChart({ revives, userId }: ReviveSkillChartProps) {
                 title: "",
                 gridcolor: "rgba(128, 128, 128, 0.2)",
                 showgrid: true,
+                tickfont: {
+                  color: "rgba(255, 255, 255, 0.85)",
+                  size: 11,
+                },
               },
               yaxis: {
                 title: "Skill Level",
                 gridcolor: "rgba(128, 128, 128, 0.2)",
                 showgrid: true,
+                tickfont: {
+                  color: "rgba(255, 255, 255, 0.85)",
+                  size: 11,
+                },
+                titlefont: {
+                  color: "rgba(255, 255, 255, 0.85)",
+                  size: 12,
+                },
               },
               plot_bgcolor: "transparent",
               paper_bgcolor: "transparent",
               font: {
-                color: "hsl(var(--foreground))",
+                color: "rgba(255, 255, 255, 0.85)",
                 size: 12,
               },
               hovermode: "closest",
@@ -184,7 +196,6 @@ export function ReviveSkillChart({ revives, userId }: ReviveSkillChartProps) {
                   result: customData.result,
                   timestamp: customData.timestamp,
                 })
-                // You can add custom behavior here, like opening a modal with revive details
               }
             }}
           />
