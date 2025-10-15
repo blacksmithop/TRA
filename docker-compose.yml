@@ -1,9 +1,0 @@
-services:
-  tornreviveapp:
-    image: ghcr.io/blacksmithop/tra/tornreviveapp:sha-ac4dd11
-    container_name: tornreviveapp
-    restart: unless-stopped
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-networks:
-  services:
-    external: true
