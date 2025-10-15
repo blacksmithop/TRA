@@ -13,8 +13,7 @@ router = APIRouter(prefix="/logs", tags=["Torn API"])
 
 @router.get("/revives", response_model=models.ReviveResponse)
 async def revives(
-    to_timestamp: int,
-    from_timestamp: int,
+    to_timestamp: Optional[int] = None,
     timestamp: Optional[int] = Query(
         None, description="Bypass cache with current timestamp"
     ),
@@ -36,8 +35,8 @@ async def revives(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
-    if to_timestamp and from_timestamp:
-        params.update({"to": to_timestamp, "from": from_timestamp})
+    if to_timestamp:
+        params.update({"to": to_timestamp})
     data = await fetch_torn_api(
         api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params
     )
