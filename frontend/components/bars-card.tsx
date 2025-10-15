@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Minimize2, Maximize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { fetchBars } from "../lib/api"
 
 interface Bar {
   current: number
@@ -60,8 +61,7 @@ export function BarsCard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
-    fetch("http://localhost:8000/torn/bars")
-      .then((res) => res.json())
+    fetchBars()
       .then((data) => {
         setBars(data.bars)
         setLoading(false)

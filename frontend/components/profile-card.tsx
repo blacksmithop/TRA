@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Minimize2, Maximize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TornIcon } from "@/components/torn-icon"
+import { fetchProfile } from "../lib/api"
 
 interface Profile {
   id: number
@@ -53,8 +54,7 @@ export function ProfileCard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
-    fetch("http://localhost:8000/torn/profile")
-      .then((res) => res.json())
+    fetchProfile()
       .then((data) => {
         setProfile(data.profile)
         setLoading(false)

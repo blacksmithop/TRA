@@ -24,6 +24,10 @@ export function ReviveCard({ revive }: ReviveCardProps) {
     return "Offline"
   }
 
+  const getTornProfileUrl = (userId: number) => {
+    return `https://www.torn.com/profiles.php?XID=${userId}`
+  }
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
@@ -33,7 +37,15 @@ export function ReviveCard({ revive }: ReviveCardProps) {
             <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Reviver</div>
             <div className="space-y-1">
               <div className="font-medium text-foreground">
-                {revive.reviver.name} <span className="text-muted-foreground">[{revive.reviver.id}]</span>
+                <a
+                  href={getTornProfileUrl(revive.reviver.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground hover:underline"
+                >
+                  {revive.reviver.name}
+                </a>{" "}
+                <span className="text-muted-foreground">[{revive.reviver.id}]</span>
               </div>
               {revive.reviver.faction && (
                 <div className="text-sm text-muted-foreground">{revive.reviver.faction.name}</div>
@@ -54,7 +66,15 @@ export function ReviveCard({ revive }: ReviveCardProps) {
               <div className="flex items-center gap-2">
                 <TornIcon name={getStatusIcon(revive.target.online_status)} size={16} />
                 <span className="font-medium text-foreground">
-                  {revive.target.name} <span className="text-muted-foreground">[{revive.target.id}]</span>
+                  <a
+                    href={getTornProfileUrl(revive.target.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground hover:underline"
+                  >
+                    {revive.target.name}
+                  </a>{" "}
+                  <span className="text-muted-foreground">[{revive.target.id}]</span>
                 </span>
               </div>
               {revive.target.faction && (

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Minimize2, Maximize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { fetchBattleStats } from "../lib/api"
 
 interface Modifier {
   effect: string
@@ -76,8 +77,7 @@ export function BattleStatsCard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
-    fetch("http://localhost:8000/torn/battlestats")
-      .then((res) => res.json())
+    fetchBattleStats()
       .then((data) => {
         setStats(data.battlestats)
         setLoading(false)

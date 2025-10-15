@@ -11,11 +11,18 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
+import { fetchRevives, fetchReviveSkillCorrelation } from "@/lib/api"
 
 const USER_ID = 1712955
 
+interface CorrelationData {
+  correlation: number
+  p_value: number
+}
+
 export default function RevivesPage() {
   const [revives, setRevives] = useState<RevivesResponse | null>(null)
+  const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -25,14 +32,11 @@ export default function RevivesPage() {
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    const fetchRevives = async () => {
+    const loadRevives = async () => {
       try {
-        const response = await fetch("http://localhost:8000/torn/revives")
-        if (!response.ok) {
-          throw new Error("Failed to fetch revives")
-        }
-        const data = await response.json()
-        setRevives(data)
+        const [revivesData, correlationData] = await Promise.all([fetchRevives(), fetchReviveSkillCorrelation()])
+        setRevives(revivesData)
+        setCorrelationData(correlationData)
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred")
       } finally {
@@ -40,7 +44,7 @@ export default function RevivesPage() {
       }
     }
 
-    fetchRevives()
+    loadRevives()
   }, [])
 
   const getFilteredRevives = (): Revive[] => {
@@ -48,14 +52,12 @@ export default function RevivesPage() {
 
     let filtered = [...revives.revives]
 
-    // Filter by type (given/received)
     if (filterType === "given") {
       filtered = filtered.filter((r) => r.reviver.id === USER_ID)
     } else if (filterType === "received") {
       filtered = filtered.filter((r) => r.target.id === USER_ID)
     }
 
-    // Filter by date
     if (dateFilter !== "all") {
       const now = Date.now() / 1000
       const daysMap = { "7days": 7, "30days": 30, "90days": 90 }
@@ -74,7 +76,6 @@ export default function RevivesPage() {
   const endIndex = startIndex + itemsPerPage
   const paginatedRevives = filteredRevives.slice(startIndex, endIndex)
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
   }, [filterType, dateFilter, itemsPerPage])
@@ -105,14 +106,13 @@ export default function RevivesPage() {
         <p className="text-muted-foreground">Track your Torn City revive history</p>
       </div>
 
-      {revives && <ReviveStatistics revives={revives.revives} userId={USER_ID} />}
+      {revives && <ReviveStatistics revives={revives.revives} userId={USER_ID} correlationData={correlationData} />}
 
       {revives && <ReviveSkillChart revives={revives.revives} userId={USER_ID} />}
 
       <Card>
         <CardContent className="pt-6">
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Filter by Type */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">Filter by Type</Label>
               <RadioGroup value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
@@ -137,7 +137,6 @@ export default function RevivesPage() {
               </RadioGroup>
             </div>
 
-            {/* Date Filter */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">Time Period</Label>
               <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as typeof dateFilter)}>
@@ -152,7 +151,6 @@ export default function RevivesPage() {
                 </SelectContent>
               </Select>
 
-              {/* Items per page */}
               <div className="pt-2">
                 <Label className="text-sm font-medium">Items per Page</Label>
                 <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number.parseInt(v))}>
@@ -169,7 +167,6 @@ export default function RevivesPage() {
             </div>
           </div>
 
-          {/* Results count */}
           <div className="mt-4 text-sm text-muted-foreground">
             Showing {startIndex + 1}-{Math.min(endIndex, filteredRevives.length)} of {filteredRevives.length} revives
           </div>
