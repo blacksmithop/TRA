@@ -11,8 +11,8 @@ class Status(BaseModel):
     state: str
     color: str
     until: Optional[int]  # Allow None as per JSON data
-    plane_image_type: str
-    travel_type: Optional[str]  # Added to match JSON data
+    plane_image_type: Optional[str] = None
+    travel_type: Optional[str] = None
 
 class Spouse(BaseModel):
     id: int
