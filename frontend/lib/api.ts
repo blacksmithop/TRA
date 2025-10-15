@@ -1,17 +1,28 @@
 /**
- * API configuration for Torn Revives
+ * API configuration for Torn Logbook
  *
  * Set the NEXT_PUBLIC_API_URL environment variable to configure the backend API URL.
  * Default: http://localhost:8000
  */
+import { getApiKey } from "./storage" // Import storage utilities to get API key from localStorage
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 /**
  * Fetch wrapper for Torn API endpoints
  */
 export async function fetchTornAPI(endpoint: string) {
+  const apiKey = getApiKey()
+  if (!apiKey) {
+    throw new Error("No API key found. Please log in.")
+  }
+
   const url = `${API_BASE_URL}${endpoint}`
-  const response = await fetch(url)
+  const response = await fetch(url, {
+    headers: {
+      "X-Torn-API-Key": apiKey,
+    },
+  })
 
   if (!response.ok) {
     throw new Error(`Failed to fetch from ${endpoint}: ${response.statusText}`)
@@ -26,6 +37,10 @@ export async function fetchProfile() {
 
 export async function fetchBars() {
   return fetchTornAPI("/user/bars")
+}
+
+export async function fetchBattleStats() {
+  return fetchTornAPI("/user/battlestats")
 }
 
 export async function fetchRevives() {

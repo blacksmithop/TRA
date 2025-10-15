@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { hasApiKey } from "../lib/storage"
 import type { RevivesResponse, Revive } from "@/lib/types"
 import { ReviveCard } from "@/components/revive-card"
 import { ReviveStatistics } from "@/components/revive-statistics"
@@ -36,6 +38,7 @@ interface ProfileData {
 }
 
 export default function Home() {
+  const router = useRouter()
   const [userId, setUserId] = useState<number | undefined>(undefined)
   const [revives, setRevives] = useState<RevivesResponse | null>(null)
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null)
@@ -49,11 +52,16 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
+    if (!hasApiKey()) {
+      router.push("/login")
+    }
+  }, [router])
+
+  useEffect(() => {
     let isMounted = true
 
-    const loadAllData = async () => {
+    const loadProfile = async () => {
       try {
-        setLoading(true)
         console.log("[v0] Fetching user profile...")
         const profileData: ProfileData = await fetchProfile()
         console.log("[v0] Profile fetched successfully:", profileData)
@@ -67,15 +75,37 @@ export default function Home() {
         const fetchedUserId = profileData.profile.id
         console.log("[v0] Setting userId to:", fetchedUserId)
         setUserId(fetchedUserId)
+      } catch (err) {
+        console.error("[v0] Profile fetch error:", err)
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Failed to load user profile")
+          setLoading(false)
+        }
+      }
+    }
 
-        // Now fetch both revives and correlation data with the valid user ID
-        console.log("[v0] Fetching revives and correlation with userId:", fetchedUserId)
-        const [revivesData, correlationData] = await Promise.all([
-          fetchRevives(),
-          fetchReviveSkillCorrelation(fetchedUserId)
-        ])
+    loadProfile()
 
-        console.log("[v0] All data fetched successfully")
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof userId !== "number" || userId <= 0) {
+      console.log("[v0] Waiting for valid userId. Current value:", userId)
+      return
+    }
+
+    let isMounted = true
+
+    const loadRevivesData = async () => {
+      try {
+        console.log("[v0] Fetching revives and correlation with userId:", userId)
+
+        const [revivesData, correlationData] = await Promise.all([fetchRevives(), fetchReviveSkillCorrelation(userId)])
+
+        console.log("[v0] Data fetched successfully")
 
         if (isMounted) {
           setRevives(revivesData)
@@ -85,18 +115,18 @@ export default function Home() {
       } catch (err) {
         console.error("[v0] Data fetch error:", err)
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "Failed to load data")
+          setError(err instanceof Error ? err.message : "Failed to load revives data")
           setLoading(false)
         }
       }
     }
 
-    loadAllData()
+    loadRevivesData()
 
     return () => {
       isMounted = false
     }
-  }, []) // Empty dependency array - run once on mount
+  }, [userId])
 
   const getFilteredRevives = (): Revive[] => {
     if (!revives || !userId) return []
