@@ -19,13 +19,14 @@ An analytics tool to track your revives on Torn.
 ## Screenshots
 
 ### Login Page
-![Login Page](./docs/images/login.png | width=500)
+<img src="./docs/images/login.png" alt="Login Page" width="500">
 
 ### Statistics
-![Statistics](./docs/images/revive_statistics.png | width=500)
+<img src="./docs/images/revive_statistics.png" alt="Statistics" width="500">
 
 ### Revives Table
-![Revives Table](./docs/images/revive_table.png | width=500)
+<img src="./docs/images/revive_table.png" alt="Revives Table" width="500">
+
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request with any improvements or bug fixes.
