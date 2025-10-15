@@ -3,7 +3,7 @@ from typing import List, Dict, Optional
 
 class Modifier(BaseModel):
     effect: str
-    value: int
+    value: float
     type: str
 
 class Stat(BaseModel):
@@ -20,5 +20,5 @@ class BattleStats(BaseModel):
 
 class UserBattleStatsResponse(BaseModel):
     battlestats: BattleStats
-    
+
 __all__ = ["UserBattleStatsResponse"]
