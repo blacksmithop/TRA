@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'backend/**'
-      - 'api.Dockerfile'
       - '.github/workflows/docker-image.yml'
   workflow_dispatch:
 
@@ -20,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: .
+        working-directory: backend
 
     steps:
       - name: Checkout repository
@@ -41,18 +40,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}/tornreviveapp
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./api.Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
