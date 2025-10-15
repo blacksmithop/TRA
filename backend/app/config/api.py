@@ -48,6 +48,12 @@ class TornApiConfig:
         access_level="Minimal"
     )
     """Endpoint for fetching user revives (requires Minimal access)."""
+    
+    REVIVES_FULL_ENDPOINT: EndpointConfig = EndpointConfig(
+        path="user/revivesfull",
+        access_level="Minimal"
+    )
+    """Endpoint for fetching user revives (full) (requires Minimal access)."""
 
     REVIVES_STATISTICS_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/personalstats",

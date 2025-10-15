@@ -17,7 +17,7 @@ class Reviver(BaseModel):
 
 class Target(BaseModel):
     id: int
-    name: str
+    name: Optional[str] = None # /revivesfull doesn't include name
     faction: Optional[Faction]
     hospital_reason: str
     early_discharge: bool
@@ -57,5 +57,8 @@ class PersonalStat(BaseModel):
 class ReviveStats(BaseModel):
     personalstats: List[PersonalStat]
 
-
-__all__ = ["ReviveResponse", "ReviveSkillSuccessCorrelation", "ReviveStats"]
+class ReviveChance(BaseModel):
+    target_score: float
+    revive_chance: float
+    
+__all__ = ["PersonalStat", "ReviveChance", "ReviveResponse", "ReviveSkillSuccessCorrelation", "ReviveStats"]
