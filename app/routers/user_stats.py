@@ -1,38 +1,37 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from typing import Optional
 from app import models
-from app.core import api_config, fetch_torn_api
-
+from app.core import api_config, fetch_torn_api, get_api_key
 
 router = APIRouter(prefix="/user", tags=["Torn API"])
 
 
-@router.get("/profile", response_model=models.MinimalProfileRoot)
+@router.get("/basic", response_model=models.MinimalProfileRoot)
 async def get_basic_user_profile(
     timestamp: Optional[int] = Query(
         None, description="Bypass cache with current timestamp"
     ),
     comment: Optional[str] = Query(None, description="Comment for logging"),
+    api_key: str = Depends(get_api_key),
 ):
-    """Get user bars information.
+    """Get user basic profile information.
 
     Fetches user status bars (energy, nerve, happy, life) from the Torn API.
 
     Args:
         timestamp: Current timestamp to bypass cache.
         comment: Comment for logging in Torn API.
+        api_key: API key extracted from Authorization header.
 
     Returns:
-        UserBarsResponse: User bars data (energy, nerve, happy, life, chain).
+        MinimalProfileRoot: User basic profile data.
 
     Raises:
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
-    data = await fetch_torn_api(api_config.BASIC_PROFILE_ENDPOINT, params)
-    print(data)
+    data = await fetch_torn_api(api_key=api_key, endpoint=api_config.BASIC_PROFILE_ENDPOINT, params=params)
     return models.MinimalProfileRoot(**data)
-
 
 @router.get("/bars", response_model=models.UserBarsResponse)
 async def get_user_bars(
@@ -40,6 +39,7 @@ async def get_user_bars(
         None, description="Bypass cache with current timestamp"
     ),
     comment: Optional[str] = Query(None, description="Comment for logging"),
+    api_key: str = Depends(get_api_key),
 ):
     """Get user bars information.
 
@@ -48,6 +48,7 @@ async def get_user_bars(
     Args:
         timestamp: Current timestamp to bypass cache.
         comment: Comment for logging in Torn API.
+        api_key: API key extracted from Authorization header.
 
     Returns:
         UserBarsResponse: User bars data (energy, nerve, happy, life, chain).
@@ -56,5 +57,5 @@ async def get_user_bars(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
-    data = await fetch_torn_api(api_config.BARS_ENDPOINT, params)
+    data = await fetch_torn_api(api_key=api_key, endpoint=api_config.BARS_ENDPOINT, params=params)
     return models.UserBarsResponse(**data)

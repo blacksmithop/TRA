@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from app import models
-from app.core import api_config, fetch_torn_api
+from app.core import api_config, fetch_torn_api, get_api_key
 from app.machine_learning import calculate_skill_successs_correlation
 
 
@@ -14,6 +14,7 @@ async def revives(
         None, description="Bypass cache with current timestamp"
     ),
     comment: Optional[str] = Query(None, description="Comment for logging"),
+    api_key: str = Depends(get_api_key),
 ):
     """Get user revive stats.
 
@@ -30,7 +31,7 @@ async def revives(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
-    data = await fetch_torn_api(api_config.REVIVES_ENDPOINT, params)
+    data = await fetch_torn_api(api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params)
     return models.ReviveResponse(**data)
 
 
@@ -41,6 +42,7 @@ async def revive_skill_correlation(
         None, description="Bypass cache with current timestamp"
     ),
     comment: Optional[str] = Query(None, description="Comment for logging"),
+    api_key: str = Depends(get_api_key),
 ):
     """Get user revive stats.
 
@@ -57,7 +59,7 @@ async def revive_skill_correlation(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
-    data = await fetch_torn_api(api_config.REVIVES_ENDPOINT, params)
+    data = await fetch_torn_api(api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params)
     try:
         corr, p_value = calculate_skill_successs_correlation(data=data, my_id=user_id)
     except ValueError:

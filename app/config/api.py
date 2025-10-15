@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 @dataclass
 class EndpointConfig:
@@ -13,25 +12,6 @@ class EndpointConfig:
     path: str
     access_level: str
 
-class TornApiSettings(BaseSettings):
-    """Pydantic settings for Torn API configuration.
-
-    Manages the API key for Torn API requests, loaded from environment variables
-    or a .env file.
-
-    Attributes:
-        TORN_API_KEY (str): The Torn API key for authentication.
-
-    Environment:
-        Loads from .env file or system environment variables.
-    """
-    TORN_API_KEY: str
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
-    )
 
 class TornApiConfig:
     """Configuration class for Torn API base URL, endpoints, and API key.
@@ -49,7 +29,6 @@ class TornApiConfig:
         BATTLESTATS_ENDPOINT (EndpointConfig): Configuration for /user/battlestats endpoint.
         BOUNTIES_ENDPOINT (EndpointConfig): Configuration for /user/bounties endpoint.
         COOLDOWNS_ENDPOINT (EndpointConfig): Configuration for /user/cooldowns endpoint.
-        settings (TornApiSettings): Pydantic settings containing the TORN_API_KEY.
 
     Example:
         config = TornApiConfig()
@@ -122,7 +101,6 @@ class TornApiConfig:
         """
         if base_url:
             self.BASE_URL = base_url.rstrip("/")
-        self.settings = TornApiSettings()
 
     def __str__(self) -> str:
         """Return a human-readable string representation of the config.
@@ -160,10 +138,10 @@ class TornApiConfig:
         """
         return f"{self.BASE_URL}/{endpoint.path}"
 
-    def get_auth_header(self) -> dict[str, str]:
+    def get_auth_header(self, api_key) -> dict[str, str]:
         """Get the Authorization header with the API key.
 
         Returns:
             dict[str, str]: Header dictionary with 'Authorization' key.
         """
-        return {"Authorization": f"ApiKey {self.settings.TORN_API_KEY}"}
+        return {"Authorization": f"ApiKey {api_key}"}
