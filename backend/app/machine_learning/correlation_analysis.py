@@ -1,5 +1,6 @@
 from scipy.stats import pearsonr
 from typing import Dict
+import numpy as np
 
 
 def calculate_skill_successs_correlation(data: Dict, my_id: int):
@@ -19,6 +20,12 @@ def calculate_skill_successs_correlation(data: Dict, my_id: int):
             - oxiblurr_revives[i]["reviver"]["skill"]
         )
         gains.append(gain)
+
+    # Replace NaN with 0.0 in chances and gains
+    chances = np.array(chances)
+    gains = np.array(gains)
+    chances = np.where(np.isnan(chances), 0.0, chances)
+    gains = np.where(np.isnan(gains), 0.0, gains)
 
     if len(chances) >= 2:
         corr, p_value = pearsonr(chances, gains)
