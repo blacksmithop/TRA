@@ -247,18 +247,26 @@ export default function Home() {
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
               <span className="text-lg font-semibold">Statistics</span>
-              <Button
-                variant="ghost"
-                size="sm"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation()
                   reloadStatsAndGraph()
                 }}
-                disabled={loadingStats}
-                className="h-8 w-8 p-0"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    reloadStatsAndGraph()
+                  }
+                }}
+                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+                  loadingStats ? "pointer-events-none opacity-50" : ""
+                }`}
               >
                 <RefreshCw className={`h-4 w-4 ${loadingStats ? "animate-spin" : ""}`} />
-              </Button>
+              </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
@@ -285,18 +293,26 @@ export default function Home() {
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
               <span className="text-lg font-semibold">Revive Skill Progress</span>
-              <Button
-                variant="ghost"
-                size="sm"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation()
                   reloadStatsAndGraph()
                 }}
-                disabled={loadingGraph}
-                className="h-8 w-8 p-0"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    reloadStatsAndGraph()
+                  }
+                }}
+                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+                  loadingGraph ? "pointer-events-none opacity-50" : ""
+                }`}
               >
                 <RefreshCw className={`h-4 w-4 ${loadingGraph ? "animate-spin" : ""}`} />
-              </Button>
+              </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
@@ -315,26 +331,34 @@ export default function Home() {
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
               <span className="text-lg font-semibold">Revives</span>
-              <Button
-                variant="ghost"
-                size="sm"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation()
                   reloadRevivesList()
                 }}
-                disabled={loadingRevivesList}
-                className="h-8 w-8 p-0"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    reloadRevivesList()
+                  }
+                }}
+                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+                  loadingRevivesList ? "pointer-events-none opacity-50" : ""
+                }`}
               >
                 <RefreshCw className={`h-4 w-4 ${loadingRevivesList ? "animate-spin" : ""}`} />
-              </Button>
+              </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="flex items-end gap-2 flex-wrap">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Filter by Type</Label>
                 <Select value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-[160px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -348,7 +372,7 @@ export default function Home() {
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Time Period</Label>
                 <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as typeof dateFilter)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -363,7 +387,7 @@ export default function Home() {
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Filter by Outcome</Label>
                 <Select value={outcomeFilter} onValueChange={(v) => setOutcomeFilter(v as typeof outcomeFilter)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-[150px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -377,7 +401,7 @@ export default function Home() {
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Items per Page</Label>
                 <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number.parseInt(v))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
