@@ -59,6 +59,12 @@ class TornApiConfig:
     
     BASE_URL: str = "https://api.torn.com/v2"
     
+    PROFILE_ENDPOINT: EndpointConfig = EndpointConfig(
+        path="user/profile",
+        access_level="Public"
+    )
+    """Endpoint for fetching user profile (requires Public access)."""
+    
     ATTACKS_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/attacks",
         access_level="Limited"

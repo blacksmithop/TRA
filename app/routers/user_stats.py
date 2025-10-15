@@ -165,6 +165,31 @@ async def get_user_attacks_full(
     data = await fetch_torn_api(api_config.ATTACKS_FULL_ENDPOINT, params)
     return models.FactionAttacksFullResponse(**data)
 
+@router.get("/profile", response_model=models.ProfileRoot)
+async def get_user_profile(
+    timestamp: Optional[int] = Query(
+        None, description="Bypass cache with current timestamp"
+    ),
+    comment: Optional[str] = Query(None, description="Comment for logging"),
+):
+    """Get user bars information.
+
+    Fetches user status bars (energy, nerve, happy, life) from the Torn API.
+
+    Args:
+        timestamp: Current timestamp to bypass cache.
+        comment: Comment for logging in Torn API.
+
+    Returns:
+        UserBarsResponse: User bars data (energy, nerve, happy, life, chain).
+
+    Raises:
+        HTTPException: If the API request fails or returns an error.
+    """
+    params = {"timestamp": timestamp, "comment": comment}
+    data = await fetch_torn_api(api_config.PROFILE_ENDPOINT, params)
+    print(data)
+    return models.ProfileRoot(**data)
 
 @router.get("/bars", response_model=models.UserBarsResponse)
 async def get_user_bars(
