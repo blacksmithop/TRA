@@ -67,3 +67,13 @@ export interface Revive {
 export interface RevivesResponse {
   revives: Revive[]
 }
+
+export interface PersonalStat {
+  name: "reviveskill" | "revives" | "revivesreceived"
+  value: number
+  timestamp: number
+}
+
+export interface ReviveStats {
+  personalstats: PersonalStat[]
+}

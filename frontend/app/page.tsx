@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { hasApiKey } from "@/lib/storage"
-import type { RevivesResponse, Revive } from "@/lib/types"
+import type { RevivesResponse, Revive, ReviveStats } from "@/lib/types"
 import { ReviveCard } from "@/components/revive-card"
 import { ReviveStatistics } from "@/components/revive-statistics"
 import { ReviveSkillChart } from "@/components/revive-skill-chart"
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { fetchRevives, fetchReviveSkillCorrelation, fetchProfile } from "@/lib/api"
+import { fetchRevives, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
 
 interface CorrelationData {
   correlation: number
@@ -42,6 +42,7 @@ export default function Home() {
   const [userId, setUserId] = useState<number | undefined>(undefined)
   const [revives, setRevives] = useState<RevivesResponse | null>(null)
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null)
+  const [reviveStats, setReviveStats] = useState<ReviveStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -101,15 +102,21 @@ export default function Home() {
 
     const loadRevivesData = async () => {
       try {
-        console.log("[v0] Fetching revives and correlation with userId:", userId)
+        console.log("[v0] Fetching revives, correlation, and stats with userId:", userId)
 
-        const [revivesData, correlationData] = await Promise.all([fetchRevives(), fetchReviveSkillCorrelation(userId)])
+        const [revivesData, correlationData, statsData] = await Promise.all([
+          fetchRevives(),
+          fetchReviveSkillCorrelation(userId),
+          fetchReviveStats(),
+        ])
 
         console.log("[v0] Data fetched successfully")
+        console.log("[v0] Revive stats:", statsData)
 
         if (isMounted) {
           setRevives(revivesData)
           setCorrelationData(correlationData)
+          setReviveStats(statsData)
           setLoading(false)
         }
       } catch (err) {
@@ -199,7 +206,12 @@ export default function Home() {
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             {revives && userId && (
-              <ReviveStatistics revives={revives.revives} userId={userId} correlationData={correlationData} />
+              <ReviveStatistics
+                revives={revives.revives}
+                userId={userId}
+                correlationData={correlationData}
+                reviveStats={reviveStats}
+              />
             )}
           </AccordionContent>
         </AccordionItem>

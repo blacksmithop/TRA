@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Revive } from "@/lib/types"
+import type { Revive, ReviveStats } from "@/lib/types"
 
 interface ReviveStatisticsProps {
   revives: Revive[]
@@ -8,30 +8,38 @@ interface ReviveStatisticsProps {
     correlation: number
     p_value: number
   } | null
+  reviveStats?: ReviveStats | null
 }
 
-export function ReviveStatistics({ revives, userId, correlationData }: ReviveStatisticsProps) {
-  // Calculate statistics
+export function ReviveStatistics({ revives, userId, correlationData, reviveStats }: ReviveStatisticsProps) {
+  const reviveSkillStat = reviveStats?.personalstats.find((s) => s.name === "reviveskill")
+  const totalRevivesStat = reviveStats?.personalstats.find((s) => s.name === "revives")
+  const revivesReceivedStat = reviveStats?.personalstats.find((s) => s.name === "revivesreceived")
+
   const revivesGiven = revives.filter((r) => r.reviver.id === userId)
   const revivesReceived = revives.filter((r) => r.target.id === userId)
 
-  const totalGiven = revivesGiven.length
-  const totalReceived = revivesReceived.length
+  // Use API stats for true totals
+  const totalGiven = totalRevivesStat?.value ?? revivesGiven.length
+  const totalReceived = revivesReceivedStat?.value ?? revivesReceived.length
 
+  // Calculate success/fail from fetched revives only (not total)
+  const fetchedCount = revivesGiven.length
   const successfulGiven = revivesGiven.filter((r) => r.result === "success").length
   const failedGiven = revivesGiven.filter((r) => r.result === "failure").length
 
-  const successRate = totalGiven > 0 ? (successfulGiven / totalGiven) * 100 : 0
-  const failRate = totalGiven > 0 ? (failedGiven / totalGiven) * 100 : 0
+  const successRate = fetchedCount > 0 ? (successfulGiven / fetchedCount) * 100 : 0
+  const failRate = fetchedCount > 0 ? (failedGiven / fetchedCount) * 100 : 0
 
   // Calculate skill progression
   const skillData = revivesGiven.filter((r) => r.reviver.skill !== null).sort((a, b) => a.timestamp - b.timestamp)
 
   const startSkill = skillData.length > 0 ? skillData[0].reviver.skill : 0
-  const endSkill = skillData.length > 0 ? skillData[skillData.length - 1].reviver.skill : 0
+  const endSkill = reviveSkillStat?.value ?? (skillData.length > 0 ? skillData[skillData.length - 1].reviver.skill : 0)
   const skillGained = endSkill! - startSkill!
 
-  const avgSuccessChance = totalGiven > 0 ? revivesGiven.reduce((sum, r) => sum + r.success_chance, 0) / totalGiven : 0
+  const avgSuccessChance =
+    fetchedCount > 0 ? revivesGiven.reduce((sum, r) => sum + r.success_chance, 0) / fetchedCount : 0
 
   const sortedRevives = [...revivesGiven].sort((a, b) => b.timestamp - a.timestamp)
   let currentStreak = 0
@@ -63,7 +71,7 @@ export function ReviveStatistics({ revives, userId, correlationData }: ReviveSta
           <CardContent>
             <div className="text-2xl font-bold text-green-500">{successRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              {successfulGiven} / {totalGiven} successful
+              {successfulGiven} / {fetchedCount} successful
             </p>
           </CardContent>
         </Card>
@@ -75,7 +83,7 @@ export function ReviveStatistics({ revives, userId, correlationData }: ReviveSta
           <CardContent>
             <div className="text-2xl font-bold text-red-500">{failRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              {failedGiven} / {totalGiven} failed
+              {failedGiven} / {fetchedCount} failed
             </p>
           </CardContent>
         </Card>

@@ -6,7 +6,7 @@
  */
 import { getApiKey } from "./storage" // Import storage utilities to get API key from localStorage
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://tornrevive.abhinavkm.com"
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 /**
  * Fetch wrapper for Torn API endpoints
@@ -49,4 +49,8 @@ export async function fetchRevives() {
 
 export async function fetchReviveSkillCorrelation(userId: number) {
   return fetchTornAPI(`/logs/revive_skill_correlation?user_id=${userId}`)
+}
+
+export async function fetchReviveStats() {
+  return fetchTornAPI("/logs/revive_stats")
 }

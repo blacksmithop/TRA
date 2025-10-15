@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { setApiKey } from "@/lib/storage"
 
 export default function LoginPage() {
@@ -47,15 +48,30 @@ export default function LoginPage() {
             Continue
           </Button>
 
-          <div className="text-center">
+          <div className="text-center space-y-3">
             <a
-              href="https://www.torn.com/preferences.php#tab=api?step=addNewKey&title=TornReviveApp&user=basic,revives"
+              href="https://www.torn.com/preferences.php#tab=api?step=addNewKey&user=basic,personalstats,bars,revives&title=TornReviveApp"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-primary hover:underline block"
             >
               Click here to generate a custom API Key
             </a>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground">Required scopes:</span>
+              <Badge variant="secondary" className="rounded-full">
+                basic
+              </Badge>
+              <Badge variant="secondary" className="rounded-full">
+                personalstats
+              </Badge>
+              <Badge variant="secondary" className="rounded-full">
+                revives
+              </Badge>
+              <Badge variant="secondary" className="rounded-full">
+                bars
+              </Badge>
+            </div>
           </div>
         </form>
       </div>
