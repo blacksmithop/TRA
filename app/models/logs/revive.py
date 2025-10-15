@@ -35,3 +35,5 @@ class Metadata(BaseModel):
 class ReviveResponse(BaseModel):
     revives: List[Revive]
     _metadata: Metadata
+    
+__all__ = ["ReviveResponse"]

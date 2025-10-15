@@ -100,6 +100,12 @@ class TornApiConfig:
         access_level="Minimal"
     )
     """Endpoint for fetching user cooldowns (requires Minimal access)."""
+    
+    REVIVES_ENDPOINT: EndpointConfig = EndpointConfig(
+        path="user/revives",
+        access_level="Minimal"
+    )
+    """Endpoint for fetching user revives (requires Minimal access)."""
 
     def __init__(self, base_url: Optional[str] = None):
         """Initialize the TornApiConfig with an optional custom base URL.

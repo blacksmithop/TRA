@@ -136,6 +136,30 @@ async def get_user_battlestats(
     data = await fetch_torn_api(api_config.BATTLESTATS_ENDPOINT, params)
     return models.UserBattleStatsResponse(**data)
 
+@router.get("/revives", response_model=models.ReviveResponse)
+async def get_user_battlestats(
+    timestamp: Optional[int] = Query(
+        None, description="Bypass cache with current timestamp"
+    ),
+    comment: Optional[str] = Query(None, description="Comment for logging"),
+):
+    """Get user revive stats.
+
+    Fetches user revive statistics
+
+    Args:
+        timestamp: Current timestamp to bypass cache.
+        comment: Comment for logging in Torn API.
+
+    Returns:
+        ReviveResponse: User revive response
+
+    Raises:
+        HTTPException: If the API request fails or returns an error.
+    """
+    params = {"timestamp": timestamp, "comment": comment}
+    data = await fetch_torn_api(api_config.REVIVES_ENDPOINT, params)
+    return models.ReviveResponse(**data)
 
 @router.get("/cooldowns", response_model=models.UserCooldownsResponse)
 async def get_user_cooldowns(
