@@ -21,6 +21,7 @@ export default function Home() {
             <BattleStatsCard />
           </div>
         </div>
+
       </div>
     </main>
   )

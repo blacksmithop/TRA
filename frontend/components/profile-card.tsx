@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Minimize2, Maximize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { TornIcon } from "@/components/torn-icon"
 
 interface Profile {
   id: number
@@ -112,18 +113,27 @@ export function ProfileCard() {
       <CardContent>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12 border-2 border-primary">
-              <AvatarImage src={profile.image || "/placeholder.svg"} alt={profile.name} />
-              <AvatarFallback>{profile.name[0]}</AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-12 w-12 border-2 border-primary">
+                <AvatarImage src={profile.image || "/placeholder.svg"} alt={profile.name} />
+                <AvatarFallback>{profile.name[0]}</AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 border border-border">
+                <TornIcon name={profile.last_action.status.toLowerCase() === "idle" ? "Idle" : "Online"} size={12} />
+              </div>
+            </div>
 
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-bold text-foreground">{profile.name}</h2>
+                <TornIcon name={profile.gender.toLowerCase() === "male" ? "Male" : "Female"} size={14} />
                 {profile.donator_status && (
-                  <Badge variant="secondary" className="bg-primary/20 text-primary text-xs">
-                    {profile.donator_status}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <TornIcon name="Subscriber" size={14} />
+                    <Badge variant="secondary" className="bg-primary/20 text-primary text-xs">
+                      {profile.donator_status}
+                    </Badge>
+                  </div>
                 )}
               </div>
             </div>
@@ -131,7 +141,6 @@ export function ProfileCard() {
 
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              {/* Level Box */}
               <div className="rounded-lg bg-muted/50 border border-border p-2">
                 <div className="text-xs text-muted-foreground mb-1">Level</div>
                 <div className="text-2xl font-bold text-foreground tracking-wider font-mono">
@@ -139,7 +148,6 @@ export function ProfileCard() {
                 </div>
               </div>
 
-              {/* Age Box with tooltip */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -157,7 +165,6 @@ export function ProfileCard() {
               </TooltipProvider>
             </div>
 
-            {/* Rank Box */}
             <div className="rounded-lg bg-muted/50 border border-border p-2">
               <div className="text-xs text-muted-foreground mb-1">Rank</div>
               <div className="space-y-1">
@@ -171,13 +178,11 @@ export function ProfileCard() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              {/* Awards Box */}
               <div className="rounded-lg bg-muted/50 border border-border p-2">
                 <div className="text-xs text-muted-foreground mb-1">Awards</div>
                 <div className="text-lg font-bold text-foreground">{profile.awards}</div>
               </div>
 
-              {/* Karma Box */}
               <div className="rounded-lg bg-muted/50 border border-border p-2">
                 <div className="text-xs text-muted-foreground mb-1">Karma</div>
                 <div className="text-lg font-bold text-foreground">{profile.karma}</div>
@@ -185,25 +190,19 @@ export function ProfileCard() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              {/* Status Box */}
               <div className="rounded-lg bg-muted/50 border border-border p-2">
                 <div className="text-xs text-muted-foreground mb-1">Status</div>
                 <div className="text-sm font-medium text-foreground">{profile.status.description}</div>
               </div>
 
-              {/* Married to Box */}
               {profile.spouse && (
                 <div className="rounded-lg bg-muted/50 border border-border p-2">
-                  <div className="text-xs text-muted-foreground mb-1">Married to</div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    <span>Married to</span>
+                  </div>
                   <div className="text-sm font-medium text-foreground">{profile.spouse.name}</div>
                 </div>
               )}
-            </div>
-
-            {/* Last seen Box */}
-            <div className="rounded-lg bg-muted/50 border border-border p-2">
-              <div className="text-xs text-muted-foreground mb-1">Last seen</div>
-              <div className="text-sm font-medium text-foreground">{profile.last_action.relative}</div>
             </div>
           </div>
         </div>
