@@ -38,14 +38,13 @@ export default function LoginPage() {
             />
             <h1 className="text-4xl font-bold text-foreground">Torn Revive</h1>
           </div>
-          {/* </CHANGE> */}
           <p className="text-muted-foreground">Enter your Torn API key to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Input
-              type="text"
+              type="password"
               placeholder="Enter your Torn API key"
               value={apiKey}
               onChange={(e) => setApiKeyInput(e.target.value)}
@@ -68,7 +67,7 @@ export default function LoginPage() {
               Click here to generate a custom API Key
             </a>
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground">Required scopes:</span>
+              <span className="text-xs text-muted-foreground">Scope:</span>
               <Badge variant="secondary" className="rounded-full">
                 basic
               </Badge>

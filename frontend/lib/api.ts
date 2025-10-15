@@ -1,15 +1,7 @@
+import { getApiKey } from "./storage"
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://tornrevive.abhinavkm.com"
 /**
- * API configuration for Torn Logbook
- *
- * Set the NEXT_PUBLIC_API_URL environment variable to configure the backend API URL.
- * Default: http://localhost:8000
- */
-import { getApiKey } from "./storage" // Import storage utilities to get API key from localStorage
-
-export const API_BASE_URL = "https://tornrevive.abhinavkm.com"
-
-/**
- * Fetch wrapper for Torn API endpoints
+ * Wrapper for Torn API endpoints
  */
 export async function fetchTornAPI(endpoint: string) {
   const apiKey = getApiKey()
