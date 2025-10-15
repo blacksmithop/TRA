@@ -20,7 +20,7 @@ export async function fetchTornAPI(endpoint: string) {
   const url = `${API_BASE_URL}${endpoint}`
   const response = await fetch(url, {
     headers: {
-      "X-Torn-API-Key": apiKey,
+      Authorization: `Bearer ${apiKey}`,
     },
   })
 
@@ -32,7 +32,7 @@ export async function fetchTornAPI(endpoint: string) {
 }
 
 export async function fetchProfile() {
-  return fetchTornAPI("/user/profile")
+  return fetchTornAPI("/user/basic")
 }
 
 export async function fetchBars() {
