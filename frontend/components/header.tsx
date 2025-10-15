@@ -25,6 +25,15 @@ export function Header() {
                   pathname === "/" ? "text-foreground font-medium" : "text-muted-foreground"
                 }`}
               >
+                Dashboard
+              </Link>
+              <Link
+                href="/revives"
+                className={`text-sm transition-colors hover:text-foreground ${
+                  pathname === "/revives" ? "text-foreground font-medium" : "text-muted-foreground"
+                }`}
+              >
+                Revives
               </Link>
             </nav>
 
