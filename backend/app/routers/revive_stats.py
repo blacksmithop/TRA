@@ -141,7 +141,7 @@ async def revive_skill_correlation(
     return models.ReviveSkillSuccessCorrelation(correlation=corr, p_value=p_value)
 
 
-@router.get("/revice_chance", response_model=models.ReviveChance)
+@router.get("/revive_chance", response_model=models.ReviveChance)
 async def revives(
     target_api_key: str,
     timestamp: Optional[int] = Query(
@@ -178,7 +178,7 @@ async def revives(
     data = await fetch_torn_api(
         api_key=api_key,
         endpoint=api_config.REVIVES_STATISTICS_ENDPOINT,
-        params={"timestamp": timestamp, "comment": comment},
+        params={"timestamp": timestamp, "comment": comment, "stat": "reviveskill,revives,revivesreceived"},
     )
     reviver_stats = models.ReviveStats(**data).personalstats
     skill_stat: models.PersonalStat = reviver_stats[0]
