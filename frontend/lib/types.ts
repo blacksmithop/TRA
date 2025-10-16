@@ -79,3 +79,8 @@ export interface PersonalStat {
 export interface ReviveStats {
   personalstats: PersonalStat[]
 }
+
+export interface ReviveChance {
+  target_score: number
+  revive_chance: number
+}

@@ -54,6 +54,7 @@ export default function Home() {
   const [loadingRevivesList, setLoadingRevivesList] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [totalRevivesLoaded, setTotalRevivesLoaded] = useState(0)
+  const [initialRevivesLoading, setInitialRevivesLoading] = useState(true)
   const [filterType, setFilterType] = useState("all")
   const [outcomeFilter, setOutcomeFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState("all")
@@ -132,6 +133,7 @@ export default function Home() {
               setRevives(revivesData)
               setTableRevives(revivesData)
               setTotalRevivesLoaded(allRevives.length)
+              setInitialRevivesLoading(false)
               if (isComplete) {
                 console.log("[v0] All revives loaded. Total:", allRevives.length)
                 setIsLoadingMore(false)
@@ -142,6 +144,7 @@ export default function Home() {
               console.error("[v0] Progressive load error:", err)
               setError(err.message)
               setIsLoadingMore(false)
+              setInitialRevivesLoading(false)
             },
           })
         }
@@ -151,6 +154,7 @@ export default function Home() {
           setError(err instanceof Error ? err.message : "Failed to load revives data")
           setLoading(false)
           setIsLoadingMore(false)
+          setInitialRevivesLoading(false)
         }
       }
     }
@@ -211,6 +215,7 @@ export default function Home() {
       setCorrelationData(correlationData)
       setReviveStats(statsData)
 
+      setInitialRevivesLoading(true)
       setIsLoadingMore(true)
       loadRevivesProgressively({
         onBatchLoaded: (allRevives, isComplete) => {
@@ -218,6 +223,7 @@ export default function Home() {
           setRevives(revivesData)
           setTableRevives(revivesData)
           setTotalRevivesLoaded(allRevives.length)
+          setInitialRevivesLoading(false)
 
           if (isComplete) {
             setIsLoadingMore(false)
@@ -227,6 +233,7 @@ export default function Home() {
           console.error("[v0] Progressive load error:", err)
           setError(err.message)
           setIsLoadingMore(false)
+          setInitialRevivesLoading(false)
         },
       })
     } catch (err) {
@@ -246,6 +253,7 @@ export default function Home() {
         const revivesData = await fetchRevivesFull()
         setTableRevives(revivesData)
       } else {
+        setInitialRevivesLoading(true)
         setIsLoadingMore(true)
         loadRevivesProgressively({
           onBatchLoaded: (allRevives, isComplete) => {
@@ -253,6 +261,7 @@ export default function Home() {
             setRevives(revivesData)
             setTableRevives(revivesData)
             setTotalRevivesLoaded(allRevives.length)
+            setInitialRevivesLoading(false)
 
             if (isComplete) {
               setIsLoadingMore(false)
@@ -262,6 +271,7 @@ export default function Home() {
             console.error("[v0] Progressive load error:", err)
             setError(err.message)
             setIsLoadingMore(false)
+            setInitialRevivesLoading(false)
           },
         })
       }
@@ -282,6 +292,7 @@ export default function Home() {
         const revivesData = await fetchRevivesFull()
         setTableRevives(revivesData)
       } else {
+        setInitialRevivesLoading(true)
         setIsLoadingMore(true)
         loadRevivesProgressively({
           onBatchLoaded: (allRevives, isComplete) => {
@@ -289,6 +300,7 @@ export default function Home() {
             setRevives(revivesData)
             setTableRevives(revivesData)
             setTotalRevivesLoaded(allRevives.length)
+            setInitialRevivesLoading(false)
 
             if (isComplete) {
               setIsLoadingMore(false)
@@ -298,6 +310,7 @@ export default function Home() {
             console.error("[v0] Progressive load error:", err)
             setError(err.message)
             setIsLoadingMore(false)
+            setInitialRevivesLoading(false)
           },
         })
       }
@@ -425,7 +438,7 @@ export default function Home() {
             <div className="flex items-center justify-between w-full pr-4">
               <span className="text-lg font-semibold">
                 Revives
-                {isLoadingMore && (
+                {isLoadingMore && !initialRevivesLoading && (
                   <span className="ml-2 text-sm font-normal text-muted-foreground">
                     (Loading... {totalRevivesLoaded} loaded)
                   </span>
@@ -454,177 +467,185 @@ export default function Home() {
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
-            <div className="flex items-center gap-3 pb-2 border-b">
-              <Switch
-                id="full-revives"
-                checked={showFullRevives}
-                onCheckedChange={handleFullRevivesToggle}
-                disabled={loadingRevivesList}
-              />
-              <Label htmlFor="full-revives" className="text-sm font-medium cursor-pointer">
-                Full
-                <span className="text-xs text-muted-foreground ml-2">
-                  (Shows all revives with IDs instead of names)
-                </span>
-              </Label>
-            </div>
-
-            <div className="flex items-end gap-2 flex-wrap">
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Filter by Type</Label>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Revives</SelectItem>
-                    <SelectItem value="given">Revives Given</SelectItem>
-                    <SelectItem value="received">Revives Received</SelectItem>
-                  </SelectContent>
-                </Select>
+            {(loadingRevivesList || initialRevivesLoading) && !tableRevives ? (
+              <div className="flex items-center justify-center py-12">
+                <Spinner className="h-8 w-8" />
               </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Time Period</Label>
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="7days">Last 7 Days</SelectItem>
-                    <SelectItem value="30days">Last 30 Days</SelectItem>
-                    <SelectItem value="90days">Last 90 Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Filter by Outcome</Label>
-                <Select value={outcomeFilter} onValueChange={setOutcomeFilter}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Outcomes</SelectItem>
-                    <SelectItem value="success">Success</SelectItem>
-                    <SelectItem value="failure">Failure</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Items per Page</Label>
-                <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number.parseInt(v))}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="15">15</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredRevives.length)} of {filteredRevives.length}{" "}
-                revives
-                {isLoadingMore && !showFullRevives && (
-                  <span className="ml-2 inline-flex items-center gap-1">
-                    <Spinner className="h-3 w-3" />
-                    <span>Loading more...</span>
-                  </span>
-                )}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number
-                      if (totalPages <= 5) {
-                        pageNum = i + 1
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i
-                      } else {
-                        pageNum = currentPage - 2 + i
-                      }
-
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className="w-10"
-                        >
-                          {pageNum}
-                        </Button>
-                      )
-                    })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 pb-2 border-b">
+                  <Switch
+                    id="full-revives"
+                    checked={showFullRevives}
+                    onCheckedChange={handleFullRevivesToggle}
+                    disabled={loadingRevivesList}
+                  />
+                  <Label htmlFor="full-revives" className="text-sm font-medium cursor-pointer">
+                    Full
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (Shows all revives with IDs instead of names)
+                    </span>
+                  </Label>
                 </div>
-              )}
-            </div>
 
-            <Card>
-              <ScrollArea className="h-[600px]">
-                <CardContent className="p-0">
-                  <div
-                    className={
-                      showFullRevives
-                        ? "grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-                        : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-                    }
-                  >
-                    <div>Reviver</div>
-                    <div>Faction</div>
-                    {!showFullRevives && <div>Skill</div>}
-                    <div>Target</div>
-                    <div>Faction</div>
-                    <div>Hospitalized by</div>
-                    <div>Chance</div>
-                    <div>Outcome</div>
-                    <div>Timestamp</div>
+                <div className="flex items-end gap-2 flex-wrap">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Filter by Type</Label>
+                    <Select value={filterType} onValueChange={setFilterType}>
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Revives</SelectItem>
+                        <SelectItem value="given">Revives Given</SelectItem>
+                        <SelectItem value="received">Revives Received</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  {paginatedRevives.length > 0 ? (
-                    <div>
-                      {paginatedRevives.map((revive) => (
-                        <ReviveCard key={revive.id} revive={revive} showFullMode={showFullRevives} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex min-h-[200px] items-center justify-center">
-                      <p className="text-muted-foreground">No revives found with current filters</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Time Period</Label>
+                    <Select value={dateFilter} onValueChange={setDateFilter}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="7days">Last 7 Days</SelectItem>
+                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                        <SelectItem value="90days">Last 90 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Filter by Outcome</Label>
+                    <Select value={outcomeFilter} onValueChange={setOutcomeFilter}>
+                      <SelectTrigger className="w-[150px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Outcomes</SelectItem>
+                        <SelectItem value="success">Success</SelectItem>
+                        <SelectItem value="failure">Failure</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Items per Page</Label>
+                    <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number.parseInt(v))}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="15">15</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredRevives.length)} of {filteredRevives.length}{" "}
+                    revives
+                    {isLoadingMore && !showFullRevives && (
+                      <span className="ml-2 inline-flex items-center gap-1">
+                        <Spinner className="h-3 w-3" />
+                        <span>Loading more...</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum: number
+                          if (totalPages <= 5) {
+                            pageNum = i + 1
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i
+                          } else {
+                            pageNum = currentPage - 2 + i
+                          }
+
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className="w-10"
+                            >
+                              {pageNum}
+                            </Button>
+                          )
+                        })}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
                     </div>
                   )}
-                </CardContent>
-              </ScrollArea>
-            </Card>
+                </div>
+
+                <Card>
+                  <ScrollArea className="h-[600px]">
+                    <CardContent className="p-0">
+                      <div
+                        className={
+                          showFullRevives
+                            ? "grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+                            : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+                        }
+                      >
+                        <div>Reviver</div>
+                        <div>Faction</div>
+                        {!showFullRevives && <div>Skill</div>}
+                        <div>Target</div>
+                        <div>Faction</div>
+                        <div>Hospitalized by</div>
+                        <div>Chance</div>
+                        <div>Outcome</div>
+                        <div>Timestamp</div>
+                      </div>
+
+                      {paginatedRevives.length > 0 ? (
+                        <div>
+                          {paginatedRevives.map((revive) => (
+                            <ReviveCard key={revive.id} revive={revive} showFullMode={showFullRevives} />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex min-h-[200px] items-center justify-center">
+                          <p className="text-muted-foreground">No revives found with current filters</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              </>
+            )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>

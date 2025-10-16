@@ -64,6 +64,26 @@ export async function fetchReviveStats() {
   return fetchTornAPI("/logs/revive_stats")
 }
 
+export async function fetchReviveChance(targetApiKey: string) {
+  const apiKey = getApiKey()
+  if (!apiKey) {
+    throw new Error("No API key found. Please log in.")
+  }
+
+  const url = `${API_BASE_URL}/logs/revive_chance?target_api_key=${encodeURIComponent(targetApiKey)}&timestamp=${Date.now()}`
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to calculate revive chance: ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
 export function getLogoUrl() {
   return `${API_BASE_URL}/static/logo`
 }
