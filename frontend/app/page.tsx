@@ -61,6 +61,7 @@ export default function Home() {
   const [itemsPerPage, setItemsPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [showFullRevives, setShowFullRevives] = useState(false)
+  const [selectedReviveId, setSelectedReviveId] = useState<number | null>(null)
 
   useEffect(() => {
     if (!hasApiKey()) {
@@ -194,6 +195,28 @@ export default function Home() {
   }
 
   const filteredRevives = getFilteredRevives()
+
+  const calculateSkillGains = (revives: Revive[]): Map<number, number> => {
+    const skillGains = new Map<number, number>()
+
+    const sortedRevives = [...revives]
+      .filter((r) => r.reviver.id === userId && r.reviver.skill != null)
+      .sort((a, b) => a.timestamp - b.timestamp)
+
+    for (let i = 1; i < sortedRevives.length; i++) {
+      const currentSkill = sortedRevives[i].reviver.skill!
+      const previousSkill = sortedRevives[i - 1].reviver.skill!
+      const gain = currentSkill - previousSkill
+
+      if (gain > 0) {
+        skillGains.set(sortedRevives[i].id, gain)
+      }
+    }
+
+    return skillGains
+  }
+
+  const skillGains = calculateSkillGains(filteredRevives)
 
   const totalPages = Math.ceil(filteredRevives.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -625,7 +648,14 @@ export default function Home() {
 
                 <Card>
                   <ScrollArea className="h-[600px]">
-                    <CardContent className="p-0">
+                    <CardContent
+                      className="p-0"
+                      onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                          setSelectedReviveId(null)
+                        }
+                      }}
+                    >
                       <div
                         className={
                           showFullRevives
@@ -647,7 +677,14 @@ export default function Home() {
                       {paginatedRevives.length > 0 ? (
                         <div>
                           {paginatedRevives.map((revive) => (
-                            <ReviveCard key={revive.id} revive={revive} showFullMode={showFullRevives} />
+                            <ReviveCard
+                              key={revive.id}
+                              revive={revive}
+                              showFullMode={showFullRevives}
+                              skillGain={skillGains.get(revive.id) ?? null}
+                              isSelected={selectedReviveId === revive.id}
+                              onClick={() => setSelectedReviveId(revive.id)}
+                            />
                           ))}
                         </div>
                       ) : (

@@ -1,3 +1,5 @@
+"use client"
+
 import type { Revive } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Activity, Minus } from "lucide-react"
@@ -5,9 +7,12 @@ import { Activity, Minus } from "lucide-react"
 interface ReviveCardProps {
   revive: Revive
   showFullMode?: boolean
+  skillGain?: number | null
+  isSelected?: boolean
+  onClick?: () => void
 }
 
-export function ReviveCard({ revive, showFullMode = false }: ReviveCardProps) {
+export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected = false, onClick }: ReviveCardProps) {
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleString("en-US", {
       month: "short",
@@ -28,10 +33,15 @@ export function ReviveCard({ revive, showFullMode = false }: ReviveCardProps) {
 
   return (
     <div
+      onClick={onClick}
       className={
         showFullMode
-          ? "grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50"
-          : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50"
+          ? `grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${
+              isSelected ? "bg-accent/50" : ""
+            }`
+          : `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${
+              isSelected ? "bg-accent/50" : ""
+            }`
       }
     >
       {/* Reviver */}
@@ -84,8 +94,17 @@ export function ReviveCard({ revive, showFullMode = false }: ReviveCardProps) {
 
       {/* Skill */}
       {!showFullMode && (
-        <div className="text-muted-foreground">
-          {revive.reviver.skill != null ? revive.reviver.skill.toFixed(2) : "-"}
+        <div className="text-muted-foreground flex items-center gap-1.5">
+          {revive.reviver.skill != null ? (
+            <>
+              <span>{revive.reviver.skill.toFixed(2)}</span>
+              {skillGain != null && skillGain > 0 && (
+                <span className="text-[10px] text-green-500 font-medium">+{skillGain.toFixed(2)}</span>
+              )}
+            </>
+          ) : (
+            "-"
+          )}
         </div>
       )}
 
