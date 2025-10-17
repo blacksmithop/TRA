@@ -8,9 +8,27 @@ class EndpointConfig:
     Attributes:
         path (str): The endpoint path (e.g., 'user/attacks').
         access_level (str): Required access level (e.g., 'Public', 'Minimal', 'Limited').
+        ttl_seconds (int): Time to live in seconds for caching.
     """
     path: str
     access_level: str
+    ttl_seconds: int
+
+    def __str__(self) -> str:
+        """Return the path string when the object is converted to string.
+
+        Returns:
+            str: The endpoint path.
+        """
+        return self.path
+
+    def __int__(self) -> int:
+        """Return the TTL seconds when the object is converted to int.
+
+        Returns:
+            int: The TTL in seconds.
+        """
+        return self.ttl_seconds
 
 
 class TornApiConfig:
@@ -33,31 +51,36 @@ class TornApiConfig:
 
     BASIC_PROFILE_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/basic",
-        access_level="Public"
+        access_level="Public",
+        ttl_seconds=3600  # 1 hour
     )
     """Endpoint for fetching basic user profile (requires Public access)."""
 
     BARS_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/bars",
-        access_level="Minimal"
+        access_level="Minimal",
+        ttl_seconds=3600  # 1 hour
     )
     """Endpoint for fetching user bars information (requires Minimal access)."""
     
     REVIVES_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/revives",
-        access_level="Minimal"
+        access_level="Minimal",
+        ttl_seconds=86400  # 24 hours
     )
     """Endpoint for fetching user revives (requires Minimal access)."""
     
     REVIVES_FULL_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/revivesfull",
-        access_level="Minimal"
+        access_level="Minimal",
+        ttl_seconds=86400  # 24 hours
     )
     """Endpoint for fetching user revives (full) (requires Minimal access)."""
 
     REVIVES_STATISTICS_ENDPOINT: EndpointConfig = EndpointConfig(
         path="user/personalstats",
-        access_level="Public"
+        access_level="Public",
+        ttl_seconds=3600  # 1 hour
     )
     """Endpoint for fetching user revive statistics (requires Public access)."""
     
@@ -90,7 +113,7 @@ class TornApiConfig:
             str: Detailed string with base URL and endpoint details.
         """
         endpoints = [
-            f"{attr}: {getattr(self, attr).path} ({getattr(self, attr).access_level})"
+            f"{attr}: {getattr(self, attr)} ({getattr(self, attr).access_level}, TTL: {int(getattr(self, attr))}s)"
             for attr in dir(self)
             if isinstance(getattr(self, attr), EndpointConfig)
         ]
@@ -105,7 +128,7 @@ class TornApiConfig:
         Returns:
             str: The full URL combining the base URL and endpoint path.
         """
-        return f"{self.BASE_URL}/{endpoint.path}"
+        return f"{self.BASE_URL}/{str(endpoint)}"
 
     def get_auth_header(self, api_key) -> dict[str, str]:
         """Get the Authorization header with the API key.

@@ -35,10 +35,12 @@ async def revives(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
+    cache = False # don't cache first request
     if to_timestamp:
+        cache = True # cache older records
         params.update({"to": to_timestamp})
     data = await fetch_torn_api(
-        api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params
+        api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params, cache=cache
     )
     return models.ReviveResponse(**data)
 
@@ -66,8 +68,10 @@ async def revives(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment, "limit": 1000}
+    
+    endpoint = api_config.REVIVES_FULL_ENDPOINT
     data = await fetch_torn_api(
-        api_key=api_key, endpoint=api_config.REVIVES_FULL_ENDPOINT, params=params
+        api_key=api_key, endpoint=endpoint, params=params, ttl=int(endpoint)
     )
     return models.ReviveResponseFull(**data)
 
@@ -99,8 +103,9 @@ async def revive_stats(
         "comment": comment,
         "stat": "reviveskill,revives,revivesreceived",
     }
+    endpoint = api_config.REVIVES_STATISTICS_ENDPOINT
     data = await fetch_torn_api(
-        api_key=api_key, endpoint=api_config.REVIVES_STATISTICS_ENDPOINT, params=params
+        api_key=api_key, endpoint=endpoint, params=params, ttl=int(endpoint)
     )
     return models.ReviveStats(**data)
 
@@ -131,8 +136,9 @@ async def revive_skill_correlation(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
+    endpoint = api_config.REVIVES_ENDPOINT
     data = await fetch_torn_api(
-        api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params
+        api_key=api_key, endpoint=endpoint, params=params, ttl=int(endpoint)
     )
     try:
         corr, p_value = calculate_skill_success_correlation(data=data, my_id=user_id)
@@ -173,11 +179,14 @@ async def revives(
             "filter": "incoming",
             "limit": 100,
         },
+        cache=False
     )
     target_incoming_revives = models.ReviveResponse(**data)
+    endpoint = api_config.REVIVES_STATISTICS_ENDPOINT
     data = await fetch_torn_api(
         api_key=api_key,
-        endpoint=api_config.REVIVES_STATISTICS_ENDPOINT,
+        endpoint=endpoint,
+        ttl=int(endpoint),
         params={"timestamp": timestamp, "comment": comment, "stat": "reviveskill,revives,revivesreceived"},
     )
     reviver_stats = models.ReviveStats(**data).personalstats
