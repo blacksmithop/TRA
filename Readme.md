@@ -30,6 +30,8 @@ Track your revives and skill progression on torn.com
 ### Table
 <img src="./docs/images/table.png" alt="Revives Table" width="500">
 
+### Calculator
+<img src="./docs/images/chance_calculator.png" alt="Revives Table" width="500">
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request with any improvements or bug fixes.
