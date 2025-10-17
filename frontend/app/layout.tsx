@@ -8,6 +8,7 @@ import "./globals.css"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { getLogoUrl } from "@/lib/api"
+import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: "Torn Revive App",
@@ -32,6 +33,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <Analytics />
+        <Toaster />
       </body>
     </html>
   )

@@ -1,6 +1,38 @@
 import { getApiKey } from "./storage"
+import { toast } from "@/hooks/use-toast"
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+interface APIErrorDetail {
+  code?: number
+  error?: string
+}
+
+interface APIErrorResponse {
+  detail?: string | APIErrorDetail
+}
+
+async function extractErrorMessage(response: Response): Promise<string> {
+  try {
+    const data: APIErrorResponse = await response.json()
+
+    // Handle detail as object with error field
+    if (typeof data.detail === "object" && data.detail?.error) {
+      return data.detail.error
+    }
+
+    // Handle detail as string
+    if (typeof data.detail === "string") {
+      return data.detail
+    }
+
+    // Fallback to status text
+    return response.statusText || "An error occurred"
+  } catch {
+    // If JSON parsing fails, return status text
+    return response.statusText || "An error occurred"
+  }
+}
 
 /**
  * Fetch wrapper for Torn API endpoints
@@ -19,7 +51,16 @@ export async function fetchTornAPI(endpoint: string) {
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch from ${endpoint}: ${response.statusText}`)
+    const errorMessage = await extractErrorMessage(response)
+
+    // Show toast notification
+    toast({
+      variant: "destructive",
+      title: "API Error",
+      description: errorMessage,
+    })
+
+    throw new Error(errorMessage)
   }
 
   return response.json()
@@ -78,7 +119,16 @@ export async function fetchReviveChance(targetApiKey: string) {
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to calculate revive chance: ${response.statusText}`)
+    const errorMessage = await extractErrorMessage(response)
+
+    // Show toast notification
+    toast({
+      variant: "destructive",
+      title: "API Error",
+      description: errorMessage,
+    })
+
+    throw new Error(errorMessage)
   }
 
   return response.json()
