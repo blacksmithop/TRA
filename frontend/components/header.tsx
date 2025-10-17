@@ -14,7 +14,7 @@ export function Header() {
 
   const handleLogout = () => {
     removeApiKey()
-    router.push("/login")
+    router.replace("/login")
   }
 
   const isLoginPage = pathname === "/login"

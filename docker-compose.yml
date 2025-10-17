@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8122:8122"
+    container_name: torn-revive-api
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    container_name: torn-revive-frontend
+    env_file:
+      - .env
+    volumes:
+      - ./frontend:/app
+
+  redis:
+    image: "redis:latest"
+    # ports:
+    #   - "6379:6379"
+    container_name: torn-revive-redis

@@ -30,7 +30,8 @@ async def get_basic_user_profile(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
-    data = await fetch_torn_api(api_key=api_key, endpoint=api_config.BASIC_PROFILE_ENDPOINT, params=params)
+    endpoint = api_config.BASIC_PROFILE_ENDPOINT
+    data = await fetch_torn_api(api_key=api_key, endpoint=endpoint, params=params, ttl=int(endpoint))
     return models.MinimalProfileRoot(**data)
 
 @router.get("/bars", response_model=models.UserBarsResponse)
@@ -57,5 +58,6 @@ async def get_user_bars(
         HTTPException: If the API request fails or returns an error.
     """
     params = {"timestamp": timestamp, "comment": comment}
-    data = await fetch_torn_api(api_key=api_key, endpoint=api_config.BARS_ENDPOINT, params=params)
+    endpoint = api_config.BARS_ENDPOINT
+    data = await fetch_torn_api(api_key=api_key, endpoint=endpoint, params=params, ttl=int(endpoint))
     return models.UserBarsResponse(**data)

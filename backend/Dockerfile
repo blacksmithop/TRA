@@ -21,4 +21,4 @@ COPY app/ ./app/
 # Expose port
 EXPOSE 8122
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8122"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8122", "--reload"]

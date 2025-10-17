@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { hasApiKey } from "@/lib/storage"
+import { hasApiKey, removeApiKey } from "@/lib/storage"
 import type { RevivesResponse, Revive, ReviveStats } from "@/lib/types"
 import { ReviveCard } from "@/components/revive-card"
 import { ReviveStatistics } from "@/components/revive-statistics"
@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
 import { loadRevivesProgressively } from "@/lib/progressive-loader"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, AlertCircle } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
 interface CorrelationData {
@@ -48,7 +48,7 @@ export default function Home() {
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null)
   const [reviveStats, setReviveStats] = useState<ReviveStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [hasAccessError, setHasAccessError] = useState(false)
   const [loadingStats, setLoadingStats] = useState(false)
   const [loadingGraph, setLoadingGraph] = useState(false)
   const [loadingRevivesList, setLoadingRevivesList] = useState(false)
@@ -64,7 +64,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!hasApiKey()) {
-      router.push("/login")
+      router.replace("/login")
+      return
     }
   }, [router])
 
@@ -88,8 +89,10 @@ export default function Home() {
         setUserId(fetchedUserId)
       } catch (err) {
         console.error("[v0] Profile fetch error:", err)
+        if (err instanceof Error && err.message.includes("Access level")) {
+          setHasAccessError(true)
+        }
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "Failed to load user profile")
           setLoading(false)
         }
       }
@@ -142,7 +145,6 @@ export default function Home() {
             onError: (err) => {
               if (!isMounted) return
               console.error("[v0] Progressive load error:", err)
-              setError(err.message)
               setIsLoadingMore(false)
               setInitialRevivesLoading(false)
             },
@@ -151,7 +153,6 @@ export default function Home() {
       } catch (err) {
         console.error("[v0] Data fetch error:", err)
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "Failed to load revives data")
           setLoading(false)
           setIsLoadingMore(false)
           setInitialRevivesLoading(false)
@@ -231,14 +232,12 @@ export default function Home() {
         },
         onError: (err) => {
           console.error("[v0] Progressive load error:", err)
-          setError(err.message)
           setIsLoadingMore(false)
           setInitialRevivesLoading(false)
         },
       })
     } catch (err) {
       console.error("[v0] Reload error:", err)
-      setError(err instanceof Error ? err.message : "Failed to reload data")
     } finally {
       setLoadingStats(false)
       setLoadingGraph(false)
@@ -269,7 +268,6 @@ export default function Home() {
           },
           onError: (err) => {
             console.error("[v0] Progressive load error:", err)
-            setError(err.message)
             setIsLoadingMore(false)
             setInitialRevivesLoading(false)
           },
@@ -277,7 +275,6 @@ export default function Home() {
       }
     } catch (err) {
       console.error("[v0] Reload error:", err)
-      setError(err instanceof Error ? err.message : "Failed to reload revives")
     } finally {
       setLoadingRevivesList(false)
     }
@@ -308,7 +305,6 @@ export default function Home() {
           },
           onError: (err) => {
             console.error("[v0] Progressive load error:", err)
-            setError(err.message)
             setIsLoadingMore(false)
             setInitialRevivesLoading(false)
           },
@@ -318,7 +314,6 @@ export default function Home() {
       setCurrentPage(1)
     } catch (err) {
       console.error("[v0] Toggle error:", err)
-      setError(err instanceof Error ? err.message : "Failed to load revives")
     } finally {
       setLoadingRevivesList(false)
     }
@@ -332,13 +327,32 @@ export default function Home() {
     )
   }
 
-  if (error) {
+  if (hasAccessError) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium text-destructive">Error loading revives</p>
-          <p className="text-sm text-muted-foreground">{error}</p>
-        </div>
+      <div className="flex min-h-[600px] items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">API Access Level Not Sufficient</h2>
+              <p className="text-sm text-muted-foreground">
+                Your API key does not have the required access level to use this application. Please create another one.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                removeApiKey()
+                router.push("/login")
+              }}
+              variant="outline"
+              className="mt-2"
+            >
+              Update API Key
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
