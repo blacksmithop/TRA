@@ -64,7 +64,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!hasApiKey()) {
-      router.push("/login")
+      router.replace("/login")
+      return
     }
   }, [router])
 
