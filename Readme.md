@@ -1,6 +1,9 @@
 # Torn Revive
 
-An analytics tool to track your revives on Torn.
+![Docker Build](https://img.shields.io/github/actions/workflow/status/blacksmithop/TRA/docker-image.yml?branch=main&style=for-the-badge&logo=docker&label=Docker%20Image&color=%23007BFF) ![Github Pages](https://img.shields.io/github/actions/workflow/status/blacksmithop/TRA/gh-pages.yml?branch=main&style=for-the-badge&logo=nextdotjs&label=Website)
+
+
+Track your revives and skill progression on torn.com
 
 ## Features
 
