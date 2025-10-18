@@ -1,8 +1,10 @@
 /**
- * LocalStorage utilities for managing Torn API Key
+ * LocalStorage utilities for managing Torn API Key and Revive Cost
  */
 
 const TORN_API_KEY = "torn_api_key"
+const REVIVE_COST_KEY = "revive_cost"
+const DEFAULT_REVIVE_COST = 25
 
 /**
  * Get the stored Torn API key from localStorage
@@ -33,4 +35,21 @@ export function removeApiKey(): void {
  */
 export function hasApiKey(): boolean {
   return getApiKey() !== null
+}
+
+/**
+ * Get the stored revive cost from localStorage
+ */
+export function getReviveCost(): number {
+  if (typeof window === "undefined") return DEFAULT_REVIVE_COST
+  const stored = localStorage.getItem(REVIVE_COST_KEY)
+  return stored ? Number.parseInt(stored, 10) : DEFAULT_REVIVE_COST
+}
+
+/**
+ * Save the revive cost to localStorage
+ */
+export function setReviveCost(cost: number): void {
+  if (typeof window === "undefined") return
+  localStorage.setItem(REVIVE_COST_KEY, cost.toString())
 }

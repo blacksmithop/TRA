@@ -84,3 +84,27 @@ export interface ReviveChance {
   target_score: number
   revive_chance: number
 }
+
+// Bars API Response Types
+export interface Bar {
+  current: number
+  maximum: number
+  increment: number
+  interval: number
+  tick_time: number
+  full_time: number
+}
+
+export type Chain = {}
+
+export interface Bars {
+  energy: Bar
+  nerve: Bar
+  happy: Bar
+  life: Bar
+  chain: Chain | null
+}
+
+export interface UserBarsResponse {
+  bars: Bars
+}

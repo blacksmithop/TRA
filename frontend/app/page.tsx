@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { hasApiKey, removeApiKey } from "@/lib/storage"
-import type { RevivesResponse, Revive, ReviveStats } from "@/lib/types"
+import type { RevivesResponse, Revive, ReviveStats, UserBarsResponse } from "@/lib/types"
 import { ReviveCard } from "@/components/revive-card"
 import { ReviveStatistics } from "@/components/revive-statistics"
 import { ReviveSkillChart } from "@/components/revive-skill-chart"
+import { EnergyBarDisplay } from "@/components/energy-bar-display"
 import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -14,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
+import { fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats, fetchBars } from "@/lib/api"
 import { loadRevivesProgressively } from "@/lib/progressive-loader"
 import { RefreshCw, AlertCircle, Download, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -48,11 +49,13 @@ export default function Home() {
   const [tableRevives, setTableRevives] = useState<RevivesResponse | null>(null)
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null)
   const [reviveStats, setReviveStats] = useState<ReviveStats | null>(null)
+  const [barsData, setBarsData] = useState<UserBarsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [hasAccessError, setHasAccessError] = useState(false)
   const [loadingStats, setLoadingStats] = useState(false)
   const [loadingGraph, setLoadingGraph] = useState(false)
   const [loadingRevivesList, setLoadingRevivesList] = useState(false)
+  const [loadingEnergy, setLoadingEnergy] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [totalRevivesLoaded, setTotalRevivesLoaded] = useState(0)
   const [initialRevivesLoading, setInitialRevivesLoading] = useState(true)
@@ -121,16 +124,18 @@ export default function Home() {
       try {
         console.log("[v0] Fetching correlation and stats with userId:", userId)
 
-        const [correlationData, statsData] = await Promise.all([
+        const [correlationData, statsData, barsData] = await Promise.all([
           fetchReviveSkillCorrelation(userId),
           fetchReviveStats(),
+          fetchBars(),
         ])
 
-        console.log("[v0] Correlation and stats fetched successfully")
+        console.log("[v0] Correlation, stats, and bars fetched successfully")
 
         if (isMounted) {
           setCorrelationData(correlationData)
           setReviveStats(statsData)
+          setBarsData(barsData)
           setLoading(false)
           setIsLoadingMore(true)
           loadRevivesProgressively({
@@ -166,8 +171,20 @@ export default function Home() {
 
     loadRevivesData()
 
+    const barsInterval = setInterval(async () => {
+      try {
+        const barsData = await fetchBars()
+        if (isMounted) {
+          setBarsData(barsData)
+        }
+      } catch (err) {
+        console.error("[v0] Failed to refresh bars:", err)
+      }
+    }, 30000)
+
     return () => {
       isMounted = false
+      clearInterval(barsInterval)
     }
   }, [userId])
 
@@ -420,6 +437,18 @@ export default function Home() {
     return <ArrowDown className="h-3 w-3 ml-1" />
   }
 
+  const reloadEnergy = async () => {
+    setLoadingEnergy(true)
+    try {
+      const barsData = await fetchBars()
+      setBarsData(barsData)
+    } catch (err) {
+      console.error("[v0] Reload energy error:", err)
+    } finally {
+      setLoadingEnergy(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -465,7 +494,48 @@ export default function Home() {
         <p className="text-muted-foreground">Track your Torn City revive history</p>
       </div>
 
-      <Accordion type="multiple" defaultValue={["statistics", "graph", "revives"]} className="space-y-4">
+      <Accordion type="multiple" defaultValue={["energy", "statistics", "graph", "revives"]} className="space-y-4">
+        <AccordionItem value="energy" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center justify-between w-full pr-4">
+              <span className="text-lg font-semibold">Plan</span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  reloadEnergy()
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    reloadEnergy()
+                  }
+                }}
+                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+                  loadingEnergy ? "pointer-events-none opacity-50" : ""
+                }`}
+              >
+                <RefreshCw className={`h-4 w-4 ${loadingEnergy ? "animate-spin" : ""}`} />
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            {loadingEnergy ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner className="h-6 w-6" />
+              </div>
+            ) : barsData ? (
+              <EnergyBarDisplay energyBar={barsData.bars.energy} />
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <p>Unable to load energy data</p>
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+
         <AccordionItem value="statistics" className="border rounded-lg">
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center justify-between w-full pr-4">
