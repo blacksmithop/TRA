@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { removeApiKey } from "@/lib/storage"
+import { removeApiKey, hasApiKey } from "@/lib/storage"
 import { getLogoUrl } from "@/lib/api"
 import { Heart } from "lucide-react"
 import { ReviveChanceCalculator } from "@/components/revive-chance-calculator"
@@ -37,7 +37,7 @@ export function Header() {
           </Link>
 
           <div className="flex flex-1 items-center justify-end gap-2">
-            {!isLoginPage && (
+            {!isLoginPage && hasApiKey() && (
               <>
                 <ReviveChanceCalculator />
 
