@@ -5,6 +5,8 @@
 
 [Credits](./docs/Credits.md)
 
+![Working](./docs/images/TornReviveApp.gif)
+
 ## Features
 
 | Feature | Status | Description |
