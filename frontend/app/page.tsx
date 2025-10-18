@@ -16,8 +16,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats } from "@/lib/api"
 import { loadRevivesProgressively } from "@/lib/progressive-loader"
-import { RefreshCw, AlertCircle } from "lucide-react"
+import { RefreshCw, AlertCircle, Download, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
+import * as XLSX from "xlsx"
 
 interface CorrelationData {
   correlation: number
@@ -62,6 +63,8 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1)
   const [showFullRevives, setShowFullRevives] = useState(false)
   const [selectedReviveId, setSelectedReviveId] = useState<number | null>(null)
+  const [sortField, setSortField] = useState<"skill" | "chance" | "timestamp" | null>(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
 
   useEffect(() => {
     if (!hasApiKey()) {
@@ -191,7 +194,29 @@ export default function Home() {
       filtered = filtered.filter((r) => r.timestamp >= cutoff)
     }
 
-    return filtered.sort((a, b) => b.timestamp - a.timestamp)
+    if (sortField && sortDirection) {
+      filtered.sort((a, b) => {
+        let aValue: number
+        let bValue: number
+
+        if (sortField === "skill") {
+          aValue = a.reviver.skill ?? 0
+          bValue = b.reviver.skill ?? 0
+        } else if (sortField === "chance") {
+          aValue = a.success_chance
+          bValue = b.success_chance
+        } else {
+          aValue = a.timestamp
+          bValue = b.timestamp
+        }
+
+        return sortDirection === "asc" ? aValue - bValue : bValue - aValue
+      })
+    } else {
+      filtered.sort((a, b) => b.timestamp - a.timestamp)
+    }
+
+    return filtered
   }
 
   const filteredRevives = getFilteredRevives()
@@ -342,6 +367,59 @@ export default function Home() {
     }
   }
 
+  const handleSort = (field: "skill" | "chance" | "timestamp") => {
+    if (sortField === field) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc")
+      } else if (sortDirection === "desc") {
+        setSortDirection(null)
+        setSortField(null)
+      }
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const exportToExcel = () => {
+    if (!filteredRevives.length) return
+
+    const exportData = filteredRevives.map((revive) => ({
+      Reviver: revive.reviver.name || `[${revive.reviver.id}]`,
+      "Reviver Faction": revive.reviver.faction?.name || "N/A",
+      Skill: revive.reviver.skill ?? "N/A",
+      Target: revive.target.name || `[${revive.target.id}]`,
+      "Target Faction": revive.target.faction?.name || "N/A",
+      "Hospitalized By": revive.target.hospital_reason,
+      "Success Chance": `${revive.success_chance}%`,
+      Outcome: revive.result === "success" ? "Success" : "Failure",
+      Timestamp: new Date(revive.timestamp * 1000).toLocaleString(),
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Revives")
+
+    const maxWidth = 50
+    const colWidths = Object.keys(exportData[0] || {}).map((key) => {
+      const maxLength = Math.max(key.length, ...exportData.map((row) => String(row[key as keyof typeof row]).length))
+      return { wch: Math.min(maxLength + 2, maxWidth) }
+    })
+    worksheet["!cols"] = colWidths
+
+    XLSX.writeFile(workbook, `torn-revives-${new Date().toISOString().split("T")[0]}.xlsx`)
+  }
+
+  const SortIcon = ({ field }: { field: "skill" | "chance" | "timestamp" }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />
+    }
+    if (sortDirection === "asc") {
+      return <ArrowUp className="h-3 w-3 ml-1" />
+    }
+    return <ArrowDown className="h-3 w-3 ml-1" />
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -481,25 +559,48 @@ export default function Home() {
                   </span>
                 )}
               </span>
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  reloadRevivesList()
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+              <div className="flex items-center gap-2">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
                     e.stopPropagation()
-                    e.preventDefault()
+                    exportToExcel()
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      exportToExcel()
+                    }
+                  }}
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 px-3 cursor-pointer ${
+                    !filteredRevives.length ? "pointer-events-none opacity-50" : ""
+                  }`}
+                >
+                  <Download className="h-4 w-4" />
+                  Export to Excel
+                </div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation()
                     reloadRevivesList()
-                  }
-                }}
-                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
-                  loadingRevivesList ? "pointer-events-none opacity-50" : ""
-                }`}
-              >
-                <RefreshCw className={`h-4 w-4 ${loadingRevivesList ? "animate-spin" : ""}`} />
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      reloadRevivesList()
+                    }
+                  }}
+                  className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+                    loadingRevivesList ? "pointer-events-none opacity-50" : ""
+                  }`}
+                >
+                  <RefreshCw className={`h-4 w-4 ${loadingRevivesList ? "animate-spin" : ""}`} />
+                </div>
               </div>
             </div>
           </AccordionTrigger>
@@ -665,11 +766,25 @@ export default function Home() {
                       >
                         <div>Reviver</div>
                         <div>Faction</div>
-                        {!showFullRevives && <div>Skill</div>}
+                        {!showFullRevives && (
+                          <div
+                            className="flex items-center cursor-pointer hover:text-foreground transition-colors"
+                            onClick={() => handleSort("skill")}
+                          >
+                            Skill
+                            <SortIcon field="skill" />
+                          </div>
+                        )}
                         <div>Target</div>
                         <div>Faction</div>
                         <div>Hospitalized by</div>
-                        <div>Chance</div>
+                        <div
+                          className="flex items-center cursor-pointer hover:text-foreground transition-colors"
+                          onClick={() => handleSort("chance")}
+                        >
+                          Chance
+                          <SortIcon field="chance" />
+                        </div>
                         <div>Outcome</div>
                         <div>Timestamp</div>
                       </div>
