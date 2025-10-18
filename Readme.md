@@ -1,37 +1,49 @@
 # Torn Revive
 
-![Docker Build](https://img.shields.io/github/actions/workflow/status/blacksmithop/TRA/docker-image.yml?branch=main&style=for-the-badge&logo=docker&label=Docker%20Image&color=%23007BFF) ![Github Pages](https://img.shields.io/github/actions/workflow/status/blacksmithop/TRA/gh-pages.yml?branch=main&style=for-the-badge&logo=nextdotjs&label=Website)
+[![Docker Build](https://img.shields.io/github/actions/workflow/status/blacksmithop/TRA/docker-image.yml?branch=main&style=for-the-badge&logo=docker&label=Docker%20Image&color=%23007BFF)](https://github.com/blacksmithop/TRA/actions/workflows/docker-image.yml) [![Github Pages](https://img.shields.io/github/actions/workflow/status/blacksmithop/TRA/gh-pages.yml?branch=main&style=for-the-badge&logo=nextdotjs&label=Website)](https://github.com/blacksmithop/TRA/actions/workflows/gh-pages.yml) 
+---
 
-
-Track your revives and skill progression on torn.com
+[Credits](./docs/Credits.md)
 
 ## Features
 
-- [x] Login with Torn API Key (custom)
-- [x] Overall Revive Statistics: View comprehensive stats for your revive activity.
-- [x] Tabular Breakdown of Revives: Detailed table of individual revive events.
-- [x] Add caching
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Torn API Login | ✅ | Secure login with your custom Torn API key |
+| Revive Statistics | ✅ | Track total revives, success rates & trends |
+| Revives Table | ✅ | Complete revive history with search & filters |
+| Excel Export | ✅ | Download filtered data as Excel spreadsheet |
+| Success Calculator | ✅ | Predict revive success based on skills & target |
+| Cost Breakdown | ✅ | Compare energy source costs (hospital/nurse/etc.) |
 
-## Planned Features
+---
 
-- [ ] Current revive cost calculator (based on faction perks).
+## Quick Start
 
-## Screenshots
+Clone the repo
 
-### Login
-<img src="./docs/images/login.png" alt="Login Page" width="500">
+```bash
+# Clone the repo
+git clone https://github.com/blacksmithop/TRA.git
+cd TRA
+```
 
-### Statistics
-<img src="./docs/images/statistics.png" alt="Statistics" width="500">
+Build the image
 
-### Graph
-<img src="./docs/images/graph.png" alt="Revives Table" width="500">
+```bash
+make build
+```
 
-### Table
-<img src="./docs/images/table.png" alt="Revives Table" width="500">
+Run the app
 
-### Calculator
-<img src="./docs/images/chance_calculator.png" alt="Revives Table" width="500">
+```bash
+make run
+```
 
-## Contributing
-Contributions are welcome! Please open an issue or submit a pull request with any improvements or bug fixes.
+Visit [http://localhost:3000](http://localhost:3000)
+
+Shutdown with
+
+```bash
+make down
+```
