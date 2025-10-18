@@ -2,8 +2,7 @@
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  basePath: '/TRA',
-  assetPrefix: '/TRA/',
+  basePath: '',
   eslint: {
     ignoreDuringBuilds: true,
   },
