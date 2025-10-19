@@ -16,7 +16,7 @@
 | Revives Table | ✅ | Complete revive history with search & filters |
 | Excel Export | ✅ | Download filtered data as Excel spreadsheet |
 | Success Calculator | ✅ | Predict revive success based on skills & target |
-| Cost Breakdown | ✅ | Compare energy source costs (hospital/nurse/etc.) |
+| Cost Breakdown | ✅ | Compare energy source costs |
 
 ---
 
