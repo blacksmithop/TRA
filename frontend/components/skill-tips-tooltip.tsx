@@ -41,7 +41,7 @@ export function SkillTipsTooltip({ currentSkill }: SkillTipsTooltipProps) {
     <Popover>
       <PopoverTrigger asChild>
         <button className="rounded-full p-1 transition-all hover:bg-muted" aria-label="Revive skill tips">
-          <HelpCircle className="h-6 w-6 text-muted-foreground hover:text-foreground" />
+          <HelpCircle className="h-6 w-6 text-white hover:text-foreground animate-pulse" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">

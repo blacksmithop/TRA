@@ -79,7 +79,7 @@ export function ReviveChanceCalculator() {
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <button className="rounded-lg p-2 transition-all hover:bg-muted" aria-label="Revive Chance Calculator">
-            <Calculator className="h-6 w-6 text-foreground" />
+            <Calculator className="h-6 w-6 text-blue-500" />
           </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-md">
