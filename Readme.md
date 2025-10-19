@@ -25,7 +25,6 @@
 Clone the repo
 
 ```bash
-# Clone the repo
 git clone https://github.com/blacksmithop/TRA.git
 cd TRA
 ```
@@ -49,3 +48,6 @@ Shutdown with
 ```bash
 make down
 ```
+
+## Contributing
+Contributions are welcome! Please open an issue or submit a pull request with any improvements or bug fixes.
