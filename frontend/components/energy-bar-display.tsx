@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Zap, Settings } from "lucide-react"
+import { Zap, Settings, Info } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getReviveCost, setReviveCost } from "@/lib/storage"
 import type { Bar } from "@/lib/types"
@@ -39,6 +40,7 @@ export function EnergyBarDisplay({ energyBar }: EnergyBarDisplayProps) {
   const [reviveCost, setReviveCostState] = useState(25)
   const [tempCost, setTempCost] = useState("25")
   const [open, setOpen] = useState(false)
+  const [openPopover, setOpenPopover] = useState<string | null>(null)
 
   useEffect(() => {
     const storedCost = getReviveCost()
@@ -146,38 +148,84 @@ export function EnergyBarDisplay({ energyBar }: EnergyBarDisplayProps) {
             const revives = calculateRevives(source.energy)
             const costPerRevive = calculateCostPerRevive(source.cost, revives)
             return (
-              <div key={key} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground min-w-[160px]">{source.name}</span>
-                <div className="flex items-center gap-4">
-                  <span className="font-medium min-w-[60px] text-right">{source.energy} E</span>
-                  <span className="text-green-500 font-semibold min-w-[90px] text-right">
-                    {revives} revive{revives !== 1 ? "s" : ""}
+              <Popover key={key} open={openPopover === key} onOpenChange={(open) => setOpenPopover(open ? key : null)}>
+                <PopoverTrigger asChild>
+                  <div className="flex items-center justify-between text-sm gap-2 lg:cursor-default cursor-pointer lg:hover:bg-transparent hover:bg-accent/50 rounded px-2 py-1 -mx-2 transition-colors">
+                    <span className="text-muted-foreground min-w-0 flex-shrink truncate">{source.name}</span>
+                    <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                      <span className="font-medium w-[50px] sm:w-[60px] text-right">{source.energy} E</span>
+                      <span className="text-green-500 font-semibold w-[60px] sm:w-[90px] text-right text-xs sm:text-sm">
+                        {revives} rev{revives !== 1 ? "s" : ""}
+                      </span>
+                      <Info className="h-4 w-4 text-muted-foreground lg:hidden" />
+                      <span className="text-muted-foreground w-[80px] text-right hidden md:inline">
+                        {source.cost === 0 ? "Free" : `$${formatNumber(source.cost)}`}
+                      </span>
+                      <span className="text-amber-500 font-medium w-[90px] text-right hidden lg:inline">
+                        {costPerRevive === 0 ? "Free" : `$${formatNumber(costPerRevive)}/rev`}
+                      </span>
+                    </div>
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 lg:hidden" side="top">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">{source.name}</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Cost:</span>
+                        <span className="font-medium">
+                          {source.cost === 0 ? "Free" : `$${formatNumber(source.cost)}`}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Cost per Revive:</span>
+                        <span className="font-medium text-amber-500">
+                          {costPerRevive === 0 ? "Free" : `$${formatNumber(costPerRevive)}/rev`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )
+          })}
+          <Popover open={openPopover === "total"} onOpenChange={(open) => setOpenPopover(open ? "total" : null)}>
+            <PopoverTrigger asChild>
+              <div className="flex items-center justify-between text-sm pt-2 border-t border-border mt-2 gap-2 lg:cursor-default cursor-pointer lg:hover:bg-transparent hover:bg-accent/50 rounded px-2 py-1 -mx-2 transition-colors">
+                <span className="font-semibold min-w-0 flex-shrink truncate">Total per Day</span>
+                <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                  <span className="font-bold w-[50px] sm:w-[60px] text-right">{totalDailyEnergy} E</span>
+                  <span className="text-green-500 font-bold w-[60px] sm:w-[90px] text-right text-xs sm:text-sm">
+                    {totalDailyRevives} rev{totalDailyRevives !== 1 ? "s" : ""}
                   </span>
-                  <span className="text-muted-foreground min-w-[100px] text-right">
-                    {source.cost === 0 ? "Free" : `$${formatNumber(source.cost)}`}
+                  <Info className="h-4 w-4 text-muted-foreground lg:hidden" />
+                  <span className="text-muted-foreground font-bold w-[80px] text-right hidden md:inline">
+                    ${formatNumber(totalDailyCost)}
                   </span>
-                  <span className="text-amber-500 font-medium min-w-[110px] text-right">
-                    {costPerRevive === 0 ? "Free" : `$${formatNumber(costPerRevive)}/rev`}
+                  <span className="text-amber-500 font-bold w-[90px] text-right hidden lg:inline">
+                    ${formatNumber(calculateCostPerRevive(totalDailyCost, totalDailyRevives))}/rev
                   </span>
                 </div>
               </div>
-            )
-          })}
-          <div className="flex items-center justify-between text-sm pt-2 border-t border-border mt-2">
-            <span className="font-semibold min-w-[160px]">Total per Day</span>
-            <div className="flex items-center gap-4">
-              <span className="font-bold min-w-[60px] text-right">{totalDailyEnergy} E</span>
-              <span className="text-green-500 font-bold min-w-[90px] text-right">
-                {totalDailyRevives} revive{totalDailyRevives !== 1 ? "s" : ""}
-              </span>
-              <span className="text-muted-foreground font-bold min-w-[100px] text-right">
-                ${formatNumber(totalDailyCost)}
-              </span>
-              <span className="text-amber-500 font-bold min-w-[110px] text-right">
-                ${formatNumber(calculateCostPerRevive(totalDailyCost, totalDailyRevives))}/rev
-              </span>
-            </div>
-          </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 lg:hidden" side="top">
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Total Daily Cost</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total Cost:</span>
+                    <span className="font-bold">${formatNumber(totalDailyCost)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cost per Revive:</span>
+                    <span className="font-bold text-amber-500">
+                      ${formatNumber(calculateCostPerRevive(totalDailyCost, totalDailyRevives))}/rev
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>
