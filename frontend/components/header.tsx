@@ -1,5 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
+
+import { useState } from "react"
+
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -11,6 +15,13 @@ import { ReviveChanceCalculator } from "@/components/revive-chance-calculator"
 export function Header() {
   const pathname = usePathname()
   const router = useRouter()
+  const [isClient, setIsClient] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    setIsAuthenticated(hasApiKey())
+  }, [])
 
   const handleLogout = () => {
     removeApiKey()
@@ -37,7 +48,7 @@ export function Header() {
           </Link>
 
           <div className="flex flex-1 items-center justify-end gap-2">
-            {!isLoginPage && hasApiKey() && (
+            {isClient && !isLoginPage && isAuthenticated && (
               <>
                 <ReviveChanceCalculator />
 
