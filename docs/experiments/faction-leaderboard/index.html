@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Torn Revive Skills Tracker</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Setup Screen -->
+    <div class="setup-screen" id="setupScreen">
+      <h1>🏥 Torn Revive Skills Tracker</h1>
+      <p class="subtitle">Track faction member revive skills</p>
+      
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="factionIdInput" 
+          placeholder="Enter Faction ID"
+          autocomplete="off"
+        />
+      </div>
+      
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="apiKeyInput" 
+          placeholder="Enter your Torn API Key"
+          autocomplete="off"
+        />
+      </div>
+      
+      <button id="saveKeyBtn">Save & Load Data</button>
+    </div>
+
+    <!-- Data Screen -->
+    <div class="data-screen" id="dataScreen">
+      <div class="header">
+        <div>
+          <h1>🏥 Revive Skills Tracker</h1>
+          <p class="status" id="statusText">Loading...</p>
+        </div>
+        <button class="logout-btn" id="logoutBtn">Change Settings</button>
+      </div>
+
+      <div id="errorContainer"></div>
+      
+      <div class="loading" id="loadingIndicator">
+        <div class="spinner"></div>
+        <p>Fetching faction data...</p>
+      </div>
+
+      <!-- Added search, filter, and sort controls -->
+      <div class="controls" id="controls" style="display: none;">
+        <div class="controls-left">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search by name..."
+            class="search-input"
+          />
+          <select id="filterSelect" class="filter-select">
+            <option value="all">All Skills</option>
+            <option value="0-75">0-75</option>
+            <option value="75-99">75-99</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="controls-right">
+          <select id="sortSelect" class="sort-select">
+            <option value="none">Sort by...</option>
+            <option value="revive-asc">Revive Skill (Low to High)</option>
+            <option value="revive-desc">Revive Skill (High to Low)</option>
+            <option value="days-asc">Days in Faction (Low to High)</option>
+            <option value="days-desc">Days in Faction (High to Low)</option>
+          </select>
+          <button class="reload-all-btn" id="reloadAllBtn">Reload All</button>
+        </div>
+      </div>
+
+      <div class="member-count" id="memberCount"></div>
+
+      <!-- Added Days in Faction column -->
+      <div class="table-container" id="tableContainer" style="display: none;">
+        <table class="members-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Position</th>
+              <th>Revive Skill</th>
+              <th>Level</th>
+              <th>Age (Days)</th>
+              <th>Days in Faction</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="membersTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="scrollSentinel" style="height: 1px;"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
