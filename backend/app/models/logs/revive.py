@@ -4,9 +4,11 @@ from typing import Literal
 
 
 __all__ = [
+    "MetadataFull",
     "ReviveResponse",
     "ReviveResponseFull",
     "ReviveChance",
+    "ReviveFull",
     "PersonalStat",
     "ReviveStats",
     "ReviveSkillSuccessCorrelation"
@@ -39,6 +41,12 @@ class ReviveFull(BaseModel):
     success_chance: float
     result: str
     timestamp: int
+    
+    # enriched
+    Category: Optional[Literal["PvP", "OD", "Crime"]] = None
+    Chance: Optional[float] = None
+    Likelihood: Optional[Literal["Low", "Medium", "High", "Very High"]] = None
+    Gain: Optional[float] = None
 
 class MetadataFull(BaseModel):
     links: Dict[str, Optional[str]]

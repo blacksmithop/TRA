@@ -78,18 +78,16 @@ export async function fetchBattleStats() {
   return fetchTornAPI("/user/battlestats")
 }
 
-export async function fetchRevives(to_timestamp?: number) {
-  let endpoint = "/logs/revives"
-  const params = new URLSearchParams()
+export async function fetchRevives(user_id: number, to_timestamp?: number) {
+  const params = new URLSearchParams({
+    user_id: user_id.toString(),
+  })
 
   if (to_timestamp !== undefined) {
     params.append("to_timestamp", to_timestamp.toString())
   }
 
-  if (params.toString()) {
-    endpoint += `?${params.toString()}`
-  }
-
+  const endpoint = `/logs/revives?${params.toString()}`
   return fetchTornAPI(endpoint)
 }
 
