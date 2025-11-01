@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import type { Revive } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Activity, Minus, TrendingUp, Shield, Pill, Briefcase } from "lucide-react"
@@ -53,13 +54,23 @@ export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected
     }
   }
 
+  const getChanceColor = (chance: number) => {
+    if (chance >= 80) {
+      return "bg-green-500/10 text-green-500 border-green-500/30"
+    } else if (chance >= 50) {
+      return "bg-yellow-500/10 text-yellow-500 border-yellow-500/30"
+    } else {
+      return "bg-red-500/10 text-red-500 border-red-500/30"
+    }
+  }
+
   return (
     <div
       onClick={onClick}
       className={
         showFullMode
-          ? `grid grid-cols-[1.2fr_1.2fr_0.8fr_0.8fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
-          : `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
+          ? `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
+          : `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
       }
     >
       <div className="truncate">
@@ -78,23 +89,21 @@ export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected
         )}
       </div>
 
-      {!showFullMode && (
-        <div className="text-muted-foreground flex items-center gap-1.5">
-          {revive.reviver.skill != null ? (
-            <>
-              <span>{revive.reviver.skill.toFixed(2)}</span>
-              {skillGain != null && skillGain > 0 && (
-                <span className="flex items-center gap-0.5 text-[10px] text-green-500 font-medium">
-                  <TrendingUp className="h-3 w-3" />
-                  +{skillGain.toFixed(2)}
-                </span>
-              )}
-            </>
-          ) : (
-            "-"
-          )}
-        </div>
-      )}
+      <div className="text-muted-foreground flex items-center gap-1.5">
+        {revive.reviver.skill != null ? (
+          <>
+            <span>{revive.reviver.skill.toFixed(2)}</span>
+            {skillGain != null && skillGain > 0 && (
+              <span className="flex items-center gap-0.5 text-[10px] text-green-500 font-medium">
+                <TrendingUp className="h-3 w-3" />
+                +{skillGain.toFixed(2)}
+              </span>
+            )}
+          </>
+        ) : (
+          "-"
+        )}
+      </div>
 
       <div className="truncate">
         <a href={getTornProfileUrl(revive.target.id)} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline font-medium">
@@ -125,19 +134,23 @@ export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected
             )}
           </div>
 
-          <div className="text-muted-foreground font-medium">
-            {revive.Chance != null ? `${revive.Chance.toFixed(1)}%` : "-"}
+          <div className="flex items-center gap-1">
+            {revive.Chance != null && (
+              <Badge variant="outline" className={`text-xs ${getChanceColor(revive.Chance)}`}>
+                {revive.Chance.toFixed(1)}%
+              </Badge>
+            )}
           </div>
         </>
       )}
 
-      <div className="flex items-center gap-1">
-        {revive.Likelihood && (
-          <Badge variant="outline" className={`text-xs ${getLikelihoodColor(revive.Likelihood)}`}>
-            {revive.Likelihood}
-          </Badge>
-        )}
-      </div>
+    <div className="flex items-center gap-1">
+      {revive.Likelihood && (
+        <Badge variant="outline" className={`text-xs ${getLikelihoodColor(revive.Likelihood)}`}>
+          {revive.Likelihood} {revive.success_chance?.toFixed(1)}%
+        </Badge>
+      )}
+    </div>
 
       <div className="flex items-center gap-1.5">
         {revive.result === "success" ? (
@@ -154,6 +167,28 @@ export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected
       </div>
 
       <div className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(revive.timestamp)}</div>
+    </div>
+  )
+}
+
+interface ReviveListProps {
+  revives: Revive[]
+  showFullMode?: boolean
+}
+
+export function ReviveList({ revives, showFullMode = false }: ReviveListProps) {
+  return (
+    <div className="space-y-0 border rounded-md">
+      {revives.map((revive, index) => (
+        <ReviveCard
+          key={`${revive.timestamp}-${index}`}
+          revive={revive}
+          showFullMode={showFullMode}
+        />
+      ))}
+      {revives.length === 0 && (
+        <div className="px-4 py-8 text-center text-muted-foreground">No revives found.</div>
+      )}
     </div>
   )
 }

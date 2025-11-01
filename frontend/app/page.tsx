@@ -42,6 +42,9 @@ interface ProfileData {
   }
 }
 
+type CategoryFilter = "All" | "PvP" | "OD" | "Crime"
+type LikelihoodFilter = "All" | "Low" | "Medium" | "High" | "Very High"
+
 export default function Home() {
   const router = useRouter()
   const [userId, setUserId] = useState<number | undefined>(undefined)
@@ -62,12 +65,17 @@ export default function Home() {
   const [filterType, setFilterType] = useState<"all" | "given" | "received">("all")
   const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
   const [dateFilter, setDateFilter] = useState<"all" | "7days" | "30days" | "90days">("all")
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("All")
+  const [likelihoodFilter, setLikelihoodFilter] = useState<LikelihoodFilter>("All")
   const [itemsPerPage, setItemsPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [showFullRevives, setShowFullRevives] = useState(false)
   const [selectedReviveId, setSelectedReviveId] = useState<number | null>(null)
   const [sortField, setSortField] = useState<"skill" | "chance" | "timestamp" | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
+
+  const categories: CategoryFilter[] = ["All", "PvP", "OD", "Crime"]
+  const likelihoods: LikelihoodFilter[] = ["All", "Low", "Medium", "High", "Very High"]
 
   useEffect(() => {
     if (!hasApiKey()) {
@@ -173,6 +181,12 @@ export default function Home() {
       list = list.filter(r => r.timestamp >= cutoff)
     }
 
+    list = list.filter(r => {
+      if (categoryFilter !== "All" && r.Category !== categoryFilter) return false
+      if (likelihoodFilter !== "All" && r.Likelihood !== likelihoodFilter) return false
+      return true
+    })
+
     if (sortField && sortDirection) {
       list.sort((a, b) => {
         let aVal = 0, bVal = 0
@@ -215,7 +229,7 @@ export default function Home() {
   const endIndex = startIndex + itemsPerPage
   const paginatedRevives = filteredRevives.slice(startIndex, endIndex)
 
-  useEffect(() => setCurrentPage(1), [filterType, dateFilter, itemsPerPage, outcomeFilter])
+  useEffect(() => setCurrentPage(1), [filterType, outcomeFilter, dateFilter, categoryFilter, likelihoodFilter, itemsPerPage])
 
   const reloadStatsAndGraph = async () => {
     if (!userId) return
@@ -327,6 +341,8 @@ export default function Home() {
       Target: r.target.name || `[${r.target.id}]`,
       "Target Faction": r.target.faction?.name || "N/A",
       "Hospitalized By": r.target.hospital_reason,
+      Category: r.Category || "N/A",
+      Likelihood: r.Likelihood || "N/A",
       "Success Chance": `${r.success_chance}%`,
       Outcome: r.result === "success" ? "Success" : "Failure",
       Timestamp: new Date(r.timestamp * 1000).toLocaleString(),
@@ -351,6 +367,10 @@ export default function Home() {
       setLoadingEnergy(false)
     }
   }
+
+  const headerGridClass = showFullRevives
+    ? "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+    : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
 
   if (loading) {
     return (
@@ -558,6 +578,34 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Filter by Category</Label>
+                    <Select value={categoryFilter} onValueChange={(value: CategoryFilter) => setCategoryFilter(value)}>
+                      <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Filter by Likelihood</Label>
+                    <Select value={likelihoodFilter} onValueChange={(value: LikelihoodFilter) => setLikelihoodFilter(value)}>
+                      <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {likelihoods.map((lik) => (
+                          <SelectItem key={lik} value={lik}>
+                            {lik}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Items per Page</Label>
                     <Select value={itemsPerPage.toString()} onValueChange={v => setItemsPerPage(Number(v))}>
                       <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
@@ -615,28 +663,26 @@ export default function Home() {
                 <Card>
                   <ScrollArea className="h-[600px]">
                     <CardContent className="p-0" onClick={e => e.target === e.currentTarget && setSelectedReviveId(null)}>
-                      <div
-                        className={
-                          showFullRevives
-                            ? "grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-                            : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-                        }
-                      >
+                      <div className={headerGridClass}>
                         <div>Reviver</div>
                         <div>Faction</div>
-                        {!showFullRevives && (
-                          <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("skill")}>
-                            Skill <SortIcon field="skill" />
-                          </div>
-                        )}
+                        <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("skill")}>
+                          Skill <SortIcon field="skill" />
+                        </div>
                         <div>Target</div>
                         <div>Faction</div>
                         <div>Hospitalized by</div>
-                        <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("chance")}>
-                          Chance <SortIcon field="chance" />
-                        </div>
+                        {showFullRevives && <div>Category</div>}
+                        {showFullRevives && (
+                          <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("chance")}>
+                            Success Chance <SortIcon field="chance" />
+                          </div>
+                        )}
+                        <div>Likelihood</div>
                         <div>Outcome</div>
-                        <div>Timestamp</div>
+                        <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("timestamp")}>
+                          Timestamp <SortIcon field="timestamp" />
+                        </div>
                       </div>
 
                       {paginatedRevives.length > 0 ? (
