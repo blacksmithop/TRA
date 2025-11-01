@@ -44,7 +44,7 @@ export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected
     }
   }
 
-  const getLikelihoodColor = (likelihood: string) => {
+  const getSuccessPercentColor = (likelihood: string) => {
     switch (likelihood) {
       case "Low": return "bg-red-500/10 text-red-500 border-red-500/30"
       case "Medium": return "bg-yellow-500/10 text-yellow-500 border-yellow-500/30"
@@ -69,8 +69,8 @@ export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected
       onClick={onClick}
       className={
         showFullMode
-          ? `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
-          : `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
+          ? `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-2 sm:px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
+          : `grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-2 sm:px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`
       }
     >
       <div className="truncate">
@@ -144,13 +144,13 @@ export function ReviveCard({ revive, showFullMode = false, skillGain, isSelected
         </>
       )}
 
-    <div className="flex items-center gap-1">
-      {revive.Likelihood && (
-        <Badge variant="outline" className={`text-xs ${getLikelihoodColor(revive.Likelihood)}`}>
-          {revive.Likelihood} {revive.success_chance?.toFixed(1)}%
-        </Badge>
-      )}
-    </div>
+      <div className="flex items-center gap-1">
+        {revive.Likelihood && (
+          <Badge variant="outline" className={`text-xs ${getSuccessPercentColor(revive.Likelihood)}`}>
+            {revive.success_chance?.toFixed(1)}%
+          </Badge>
+        )}
+      </div>
 
       <div className="flex items-center gap-1.5">
         {revive.result === "success" ? (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { hasApiKey, removeApiKey } from "@/lib/storage"
 import type { RevivesResponse, Revive, ReviveStats, UserBarsResponse } from "@/lib/types"
@@ -17,7 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { fetchRevivesFull, fetchReviveSkillCorrelation, fetchProfile, fetchReviveStats, fetchBars } from "@/lib/api"
 import { loadRevivesProgressively } from "@/lib/progressive-loader"
-import { RefreshCw, AlertCircle, Download, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { RefreshCw, AlertCircle, Download, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Search } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import * as XLSX from "xlsx"
 
@@ -43,7 +43,7 @@ interface ProfileData {
 }
 
 type CategoryFilter = "All" | "PvP" | "OD" | "Crime"
-type LikelihoodFilter = "All" | "Low" | "Medium" | "High" | "Very High"
+type SuccessPercentFilter = "All" | "Low" | "Medium" | "High" | "Very High"
 
 export default function Home() {
   const router = useRouter()
@@ -63,19 +63,50 @@ export default function Home() {
   const [totalRevivesLoaded, setTotalRevivesLoaded] = useState(0)
   const [initialRevivesLoading, setInitialRevivesLoading] = useState(true)
   const [filterType, setFilterType] = useState<"all" | "given" | "received">("all")
-  const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
   const [dateFilter, setDateFilter] = useState<"all" | "7days" | "30days" | "90days">("all")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("All")
-  const [likelihoodFilter, setLikelihoodFilter] = useState<LikelihoodFilter>("All")
+  const [successPercentFilter, setSuccessPercentFilter] = useState<SuccessPercentFilter>("All")
   const [itemsPerPage, setItemsPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [showFullRevives, setShowFullRevives] = useState(false)
   const [selectedReviveId, setSelectedReviveId] = useState<number | null>(null)
   const [sortField, setSortField] = useState<"skill" | "chance" | "timestamp" | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
+  
+  // New header filter states
+  const [reviverNameFilter, setReviverNameFilter] = useState("")
+  const [targetNameFilter, setTargetNameFilter] = useState("")
+  const [reviverFactionFilter, setReviverFactionFilter] = useState("")
+  const [targetFactionFilter, setTargetFactionFilter] = useState("")
+  const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
+  
+  // Filter dropdown states
+  const [activeFilter, setActiveFilter] = useState<string | null>(null)
+  const [searchQueries, setSearchQueries] = useState<Record<string, string>>({})
+
+  // Refs for input focus and click outside detection
+  const reviverNameInputRef = useRef<HTMLInputElement>(null)
+  const reviverFactionInputRef = useRef<HTMLInputElement>(null)
+  const targetNameInputRef = useRef<HTMLInputElement>(null)
+  const targetFactionInputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const categories: CategoryFilter[] = ["All", "PvP", "OD", "Crime"]
-  const likelihoods: LikelihoodFilter[] = ["All", "Low", "Medium", "High", "Very High"]
+  const successPercents: SuccessPercentFilter[] = ["All", "Low", "Medium", "High", "Very High"]
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveFilter(null)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   useEffect(() => {
     if (!hasApiKey()) {
@@ -183,7 +214,14 @@ export default function Home() {
 
     list = list.filter(r => {
       if (categoryFilter !== "All" && r.Category !== categoryFilter) return false
-      if (likelihoodFilter !== "All" && r.Likelihood !== likelihoodFilter) return false
+      if (successPercentFilter !== "All" && r.Likelihood !== successPercentFilter) return false
+      
+      // New header filters
+      if (reviverNameFilter && !(r.reviver.name || r.reviver.id.toString()).toLowerCase().includes(reviverNameFilter.toLowerCase())) return false
+      if (targetNameFilter && !(r.target.name || r.target.id.toString()).toLowerCase().includes(targetNameFilter.toLowerCase())) return false
+      if (reviverFactionFilter && !(r.reviver.faction?.name || "").toLowerCase().includes(reviverFactionFilter.toLowerCase())) return false
+      if (targetFactionFilter && !(r.target.faction?.name || "").toLowerCase().includes(targetFactionFilter.toLowerCase())) return false
+      
       return true
     })
 
@@ -211,6 +249,47 @@ export default function Home() {
 
   const filteredRevives = getFilteredRevives()
 
+  // Get unique values for filters
+  const getUniqueValues = (column: string): string[] => {
+    if (!tableRevives) return []
+    
+    const values = new Set<string>()
+    
+    tableRevives.revives.forEach(revive => {
+      let value: string = ""
+      
+      switch (column) {
+        case "Reviver":
+          value = revive.reviver.name || revive.reviver.id.toString()
+          break
+        case "Reviver Faction":
+          value = revive.reviver.faction?.name || ""
+          break
+        case "Target":
+          value = revive.target.name || revive.target.id.toString()
+          break
+        case "Target Faction":
+          value = revive.target.faction?.name || ""
+          break
+        case "Hospitalized By":
+          value = revive.target.hospital_reason || ""
+          break
+      }
+      
+      if (value) {
+        values.add(value)
+      }
+    })
+    
+    return Array.from(values).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+  }
+
+  const uniqueRevivers = getUniqueValues("Reviver")
+  const uniqueReviverFactions = getUniqueValues("Reviver Faction")
+  const uniqueTargets = getUniqueValues("Target")
+  const uniqueTargetFactions = getUniqueValues("Target Faction")
+  const uniqueHospitalReasons = getUniqueValues("Hospitalized By")
+
   const skillGains = (() => {
     const map = new Map<number, number>()
     const mine = filteredRevives
@@ -229,7 +308,7 @@ export default function Home() {
   const endIndex = startIndex + itemsPerPage
   const paginatedRevives = filteredRevives.slice(startIndex, endIndex)
 
-  useEffect(() => setCurrentPage(1), [filterType, outcomeFilter, dateFilter, categoryFilter, likelihoodFilter, itemsPerPage])
+  useEffect(() => setCurrentPage(1), [filterType, dateFilter, categoryFilter, successPercentFilter, itemsPerPage, reviverNameFilter, targetNameFilter, reviverFactionFilter, targetFactionFilter, outcomeFilter])
 
   const reloadStatsAndGraph = async () => {
     if (!userId) return
@@ -342,8 +421,7 @@ export default function Home() {
       "Target Faction": r.target.faction?.name || "N/A",
       "Hospitalized By": r.target.hospital_reason,
       Category: r.Category || "N/A",
-      Likelihood: r.Likelihood || "N/A",
-      "Success Chance": `${r.success_chance}%`,
+      "Success %": `${r.success_chance}%`,
       Outcome: r.result === "success" ? "Success" : "Failure",
       Timestamp: new Date(r.timestamp * 1000).toLocaleString(),
     }))
@@ -369,8 +447,98 @@ export default function Home() {
   }
 
   const headerGridClass = showFullRevives
-    ? "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-    : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+    ? "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+    : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+
+  // Get color for success percentage
+  const getSuccessPercentColor = (likelihood: string) => {
+    switch (likelihood) {
+      case "Low": return "text-red-500"
+      case "Medium": return "text-yellow-500"
+      case "High": return "text-emerald-500"
+      case "Very High": return "text-green-500"
+      default: return "text-muted-foreground"
+    }
+  }
+
+  // Get color for outcome
+  const getOutcomeColor = (outcome: string) => {
+    switch (outcome) {
+      case "success": return "text-green-500"
+      case "failure": return "text-red-500"
+      default: return "text-muted-foreground"
+    }
+  }
+
+  // Filter dropdown component
+  const FilterDropdown = ({ 
+    column, 
+    children
+  }: { 
+    column: string, 
+    children: React.ReactNode
+  }) => {
+    if (activeFilter !== column) return null
+
+    return (
+      <div 
+        ref={dropdownRef}
+        className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-md shadow-lg z-20 p-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-foreground">Filter {column}</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setActiveFilter(null)
+            }}
+            className="h-4 w-4 flex items-center justify-center rounded-sm opacity-70 hover:opacity-100"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+        {children}
+      </div>
+    )
+  }
+
+  const hasActiveFilter = (column: string) => {
+    switch (column) {
+      case "Reviver": return !!reviverNameFilter
+      case "Reviver Faction": return !!reviverFactionFilter
+      case "Target": return !!targetNameFilter
+      case "Target Faction": return !!targetFactionFilter
+      case "Success %": return successPercentFilter !== "All"
+      case "Outcome": return outcomeFilter !== "all"
+      default: return false
+    }
+  }
+
+  const getSearchQuery = (column: string) => {
+    return searchQueries[column] || ""
+  }
+
+  const setSearchQuery = (column: string, value: string) => {
+    setSearchQueries(prev => ({ ...prev, [column]: value }))
+  }
+
+  const getFilteredOptions = (options: string[], searchQuery: string) => {
+    if (!searchQuery) return options.slice(0, 5)
+    return options
+      .filter(option => option.toLowerCase().includes(searchQuery.toLowerCase()))
+      .slice(0, 5)
+  }
+
+  const handleFilterButtonClick = (column: string, inputRef?: React.RefObject<HTMLInputElement>) => {
+    setActiveFilter(activeFilter === column ? null : column)
+    // Focus the input after a small delay to ensure the dropdown is rendered
+    setTimeout(() => {
+      if (inputRef?.current) {
+        inputRef.current.focus()
+      }
+    }, 10)
+  }
 
   if (loading) {
     return (
@@ -566,18 +734,6 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Filter by Outcome</Label>
-                    <Select value={outcomeFilter} onValueChange={setOutcomeFilter as any}>
-                      <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Outcomes</SelectItem>
-                        <SelectItem value="success">Success</SelectItem>
-                        <SelectItem value="failure">Failure</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Filter by Category</Label>
                     <Select value={categoryFilter} onValueChange={(value: CategoryFilter) => setCategoryFilter(value)}>
                       <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
@@ -585,20 +741,6 @@ export default function Home() {
                         {categories.map((cat) => (
                           <SelectItem key={cat} value={cat}>
                             {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Filter by Likelihood</Label>
-                    <Select value={likelihoodFilter} onValueChange={(value: LikelihoodFilter) => setLikelihoodFilter(value)}>
-                      <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {likelihoods.map((lik) => (
-                          <SelectItem key={lik} value={lik}>
-                            {lik}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -662,24 +804,316 @@ export default function Home() {
 
                 <Card>
                   <ScrollArea className="h-[600px]">
-                    <CardContent className="p-0" onClick={e => e.target === e.currentTarget && setSelectedReviveId(null)}>
+                    <CardContent className="p-0" onClick={() => setActiveFilter(null)}>
                       <div className={headerGridClass}>
-                        <div>Reviver</div>
-                        <div>Faction</div>
+                        {/* Reviver with filter dropdown */}
+                        <div className="relative flex items-center gap-1">
+                          <span>Reviver</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFilterButtonClick("Reviver", reviverNameInputRef)
+                            }}
+                            className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("Reviver") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+                          >
+                            <Filter className="h-3 w-3" />
+                          </button>
+                          <SortIcon field="skill" />
+                          <FilterDropdown column="Reviver">
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                <input
+                                  ref={reviverNameInputRef}
+                                  type="text"
+                                  placeholder="Search revivers..."
+                                  value={getSearchQuery("Reviver")}
+                                  onChange={(e) => setSearchQuery("Reviver", e.target.value)}
+                                  className="w-full pl-7 pr-2 py-1 text-sm border rounded bg-background text-foreground"
+                                />
+                              </div>
+                              <div className="max-h-40 overflow-y-auto">
+                                {getFilteredOptions(uniqueRevivers, getSearchQuery("Reviver")).map((reviver) => (
+                                  <div
+                                    key={reviver}
+                                    className="flex items-center gap-2 p-1 text-sm hover:bg-accent rounded cursor-pointer text-foreground"
+                                    onClick={() => {
+                                      setReviverNameFilter(reviver)
+                                      setActiveFilter(null)
+                                    }}
+                                  >
+                                    <span className="truncate">{reviver}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              {reviverNameFilter && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setReviverNameFilter("")}
+                                  className="w-full text-xs"
+                                >
+                                  Clear Filter
+                                </Button>
+                              )}
+                            </div>
+                          </FilterDropdown>
+                        </div>
+
+                        {/* Reviver Faction with filter dropdown */}
+                        <div className="relative flex items-center gap-1">
+                          <span>Faction</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFilterButtonClick("Reviver Faction", reviverFactionInputRef)
+                            }}
+                            className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("Reviver Faction") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+                          >
+                            <Filter className="h-3 w-3" />
+                          </button>
+                          <FilterDropdown column="Reviver Faction">
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                <input
+                                  ref={reviverFactionInputRef}
+                                  type="text"
+                                  placeholder="Search factions..."
+                                  value={getSearchQuery("Reviver Faction")}
+                                  onChange={(e) => setSearchQuery("Reviver Faction", e.target.value)}
+                                  className="w-full pl-7 pr-2 py-1 text-sm border rounded bg-background text-foreground"
+                                />
+                              </div>
+                              <div className="max-h-40 overflow-y-auto">
+                                {getFilteredOptions(uniqueReviverFactions, getSearchQuery("Reviver Faction")).map((faction) => (
+                                  <div
+                                    key={faction}
+                                    className="flex items-center gap-2 p-1 text-sm hover:bg-accent rounded cursor-pointer text-foreground"
+                                    onClick={() => {
+                                      setReviverFactionFilter(faction)
+                                      setActiveFilter(null)
+                                    }}
+                                  >
+                                    <span className="truncate">{faction}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              {reviverFactionFilter && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setReviverFactionFilter("")}
+                                  className="w-full text-xs"
+                                >
+                                  Clear Filter
+                                </Button>
+                              )}
+                            </div>
+                          </FilterDropdown>
+                        </div>
+
+                        {/* Skill */}
                         <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("skill")}>
                           Skill <SortIcon field="skill" />
                         </div>
-                        <div>Target</div>
-                        <div>Faction</div>
+
+                        {/* Target with filter dropdown */}
+                        <div className="relative flex items-center gap-1">
+                          <span>Target</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFilterButtonClick("Target", targetNameInputRef)
+                            }}
+                            className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("Target") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+                          >
+                            <Filter className="h-3 w-3" />
+                          </button>
+                          <FilterDropdown column="Target">
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                <input
+                                  ref={targetNameInputRef}
+                                  type="text"
+                                  placeholder="Search targets..."
+                                  value={getSearchQuery("Target")}
+                                  onChange={(e) => setSearchQuery("Target", e.target.value)}
+                                  className="w-full pl-7 pr-2 py-1 text-sm border rounded bg-background text-foreground"
+                                />
+                              </div>
+                              <div className="max-h-40 overflow-y-auto">
+                                {getFilteredOptions(uniqueTargets, getSearchQuery("Target")).map((target) => (
+                                  <div
+                                    key={target}
+                                    className="flex items-center gap-2 p-1 text-sm hover:bg-accent rounded cursor-pointer text-foreground"
+                                    onClick={() => {
+                                      setTargetNameFilter(target)
+                                      setActiveFilter(null)
+                                    }}
+                                  >
+                                    <span className="truncate">{target}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              {targetNameFilter && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setTargetNameFilter("")}
+                                  className="w-full text-xs"
+                                >
+                                  Clear Filter
+                                </Button>
+                              )}
+                            </div>
+                          </FilterDropdown>
+                        </div>
+
+                        {/* Target Faction with filter dropdown */}
+                        <div className="relative flex items-center gap-1">
+                          <span>Faction</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFilterButtonClick("Target Faction", targetFactionInputRef)
+                            }}
+                            className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("Target Faction") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+                          >
+                            <Filter className="h-3 w-3" />
+                          </button>
+                          <FilterDropdown column="Target Faction">
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                <input
+                                  ref={targetFactionInputRef}
+                                  type="text"
+                                  placeholder="Search factions..."
+                                  value={getSearchQuery("Target Faction")}
+                                  onChange={(e) => setSearchQuery("Target Faction", e.target.value)}
+                                  className="w-full pl-7 pr-2 py-1 text-sm border rounded bg-background text-foreground"
+                                />
+                              </div>
+                              <div className="max-h-40 overflow-y-auto">
+                                {getFilteredOptions(uniqueTargetFactions, getSearchQuery("Target Faction")).map((faction) => (
+                                  <div
+                                    key={faction}
+                                    className="flex items-center gap-2 p-1 text-sm hover:bg-accent rounded cursor-pointer text-foreground"
+                                    onClick={() => {
+                                      setTargetFactionFilter(faction)
+                                      setActiveFilter(null)
+                                    }}
+                                  >
+                                    <span className="truncate">{faction}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              {targetFactionFilter && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setTargetFactionFilter("")}
+                                  className="w-full text-xs"
+                                >
+                                  Clear Filter
+                                </Button>
+                              )}
+                            </div>
+                          </FilterDropdown>
+                        </div>
+
                         <div>Hospitalized by</div>
+
                         {showFullRevives && <div>Category</div>}
+                        
                         {showFullRevives && (
                           <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("chance")}>
-                            Success Chance <SortIcon field="chance" />
+                            Success % <SortIcon field="chance" />
                           </div>
                         )}
-                        <div>Likelihood</div>
-                        <div>Outcome</div>
+
+                        {/* Success % with filter dropdown */}
+                        <div className="relative flex items-center gap-1">
+                          <span>Success %</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFilterButtonClick("Success %")
+                            }}
+                            className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("Success %") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+                          >
+                            <Filter className="h-3 w-3" />
+                          </button>
+                          <FilterDropdown column="Success %">
+                            <div className="space-y-2">
+                              <select
+                                value={successPercentFilter}
+                                onChange={(e) => setSuccessPercentFilter(e.target.value as SuccessPercentFilter)}
+                                className="w-full px-2 py-1 text-sm border rounded bg-background text-foreground mb-2"
+                              >
+                                {successPercents.map((percent) => (
+                                  <option 
+                                    key={percent} 
+                                    value={percent}
+                                    className={getSuccessPercentColor(percent)}
+                                  >
+                                    {percent}
+                                  </option>
+                                ))}
+                              </select>
+                              {successPercentFilter !== "All" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSuccessPercentFilter("All")}
+                                  className="w-full text-xs"
+                                >
+                                  Clear Filter
+                                </Button>
+                              )}
+                            </div>
+                          </FilterDropdown>
+                        </div>
+
+                        {/* Outcome with filter dropdown */}
+                        <div className="relative flex items-center gap-1">
+                          <span>Outcome</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFilterButtonClick("Outcome")
+                            }}
+                            className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("Outcome") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+                          >
+                            <Filter className="h-3 w-3" />
+                          </button>
+                          <FilterDropdown column="Outcome">
+                            <div className="space-y-2">
+                              <select
+                                value={outcomeFilter}
+                                onChange={(e) => setOutcomeFilter(e.target.value as "all" | "success" | "failure")}
+                                className="w-full px-2 py-1 text-sm border rounded bg-background text-foreground mb-2"
+                              >
+                                <option value="all">All</option>
+                                <option value="success" className={getOutcomeColor("success")}>Success</option>
+                                <option value="failure" className={getOutcomeColor("failure")}>Failure</option>
+                              </select>
+                              {outcomeFilter !== "all" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setOutcomeFilter("all")}
+                                  className="w-full text-xs"
+                                >
+                                  Clear Filter
+                                </Button>
+                              )}
+                            </div>
+                          </FilterDropdown>
+                        </div>
+
                         <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("timestamp")}>
                           Timestamp <SortIcon field="timestamp" />
                         </div>
