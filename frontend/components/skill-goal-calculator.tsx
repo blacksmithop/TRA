@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import { fetchRevives, fetchReviveStats } from "@/lib/api"
+import { fetchRevives, fetchReviveStats, fetchProfile } from "@/lib/api"
 import type { Revive, ReviveStats } from "@/lib/types"
 
 interface SkillGoalResult {
@@ -36,44 +36,36 @@ export function SkillGoalCalculator() {
   const [result, setResult] = useState<SkillGoalResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [currentSkill, setCurrentSkill] = useState<number>(0)
+  const [userId, setUserId] = useState<number | null>(null)
 
   useEffect(() => {
-    const loadSkill = async () => {
+    const loadProfileAndSkill = async () => {
       try {
+        const profile = await fetchProfile()
+        const id = profile.profile.id
+        setUserId(id)
+
         const stats: ReviveStats = await fetchReviveStats()
-        const reviveSkillStat = stats.personalstats.find((stat) => stat.name === "reviveskill")
-        if (reviveSkillStat) {
-          setCurrentSkill(reviveSkillStat.value)
-        }
+        const reviveSkillStat = stats.personalstats.find(s => s.name === "reviveskill")
+        if (reviveSkillStat) setCurrentSkill(reviveSkillStat.value)
       } catch (err) {
-        console.error("[v0] Failed to fetch revive skill:", err)
+        console.error("[v0] Failed to load profile/skill:", err)
       }
     }
-
-    loadSkill()
+    loadProfileAndSkill()
   }, [])
 
-  const calculateSkillDegradation = (skill: number): number => {
-    // Formula: 1 - 0.208 * ln(skill)
-    // This represents how much the base gain is multiplied at different skill levels
-    return Math.max(0.01, 1 - 0.208 * Math.log(skill))
-  }
+  const calculateSkillDegradation = (skill: number): number => Math.max(0.01, 1 - 0.208 * Math.log(skill))
 
   const handleCalculate = async () => {
+    if (!userId) {
+      setError("User ID not loaded")
+      return
+    }
+
     const target = Number.parseFloat(targetSkill)
-
-    if (!targetSkill.trim() || isNaN(target)) {
-      setError("Please enter a valid target skill level")
-      return
-    }
-
-    if (target <= currentSkill) {
-      setError("Target skill must be higher than your current skill")
-      return
-    }
-
-    if (target > 100) {
-      setError("Target skill cannot exceed 100")
+    if (isNaN(target) || target <= currentSkill || target > 100) {
+      setError(target <= currentSkill ? "Target must be higher than current skill" : "Invalid target skill")
       return
     }
 
@@ -82,96 +74,68 @@ export function SkillGoalCalculator() {
     setResult(null)
 
     try {
-      // Fetch recent revive data (last 24 hours worth)
       const now = Math.floor(Date.now() / 1000)
       const oneDayAgo = now - 86400
-      const revivesData = await fetchRevives(oneDayAgo)
+      const revivesData = await fetchRevives(userId, oneDayAgo)
       const revives: Revive[] = revivesData.revives || []
 
-      // Filter revives where user was the reviver and has skill data
-      const userRevives = revives.filter((r) => r.reviver.skill !== null).sort((a, b) => a.timestamp - b.timestamp)
+      const userRevives = revives
+        .filter(r => r.reviver.id === userId && r.reviver.skill !== null)
+        .sort((a, b) => a.timestamp - b.timestamp)
 
       if (userRevives.length < 5) {
-        setError("Not enough recent revive data. Please perform more revives to get an accurate estimate.")
+        setError("Not enough recent revive data")
         setLoading(false)
         return
       }
 
-      // Calculate actual skill gains from recent data
       let totalGain = 0
       let gainCount = 0
-
       for (let i = 1; i < userRevives.length; i++) {
-        const prevSkill = userRevives[i - 1].reviver.skill!
-        const currSkill = userRevives[i].reviver.skill!
-        const gain = currSkill - prevSkill
-
+        const gain = userRevives[i].reviver.skill! - userRevives[i - 1].reviver.skill!
         if (gain > 0 && gain < 1) {
-          // Valid gain (positive and reasonable)
           totalGain += gain
           gainCount++
         }
       }
 
       if (gainCount === 0) {
-        setError("Unable to calculate skill gain from recent data. Try again after performing more revives.")
+        setError("Unable to calculate skill gain")
         setLoading(false)
         return
       }
 
       const avgGainPerRevive = totalGain / gainCount
-
-      // Calculate revives per 24 hours
       const timeSpan = userRevives[userRevives.length - 1].timestamp - userRevives[0].timestamp
       const revivesPer24h = (userRevives.length / timeSpan) * 86400
-
-      // Calculate average skill gain per 24 hours
       const avgGainPer24h = avgGainPerRevive * revivesPer24h
-
-      // Calculate skill needed
       const skillNeeded = target - currentSkill
 
-      // Estimate revives needed accounting for skill degradation
-      // As skill increases, gains decrease, so we need to integrate over the skill range
       let estimatedRevives = 0
       let simulatedSkill = currentSkill
-      const stepSize = 0.1 // Simulate in small steps
+      const stepSize = 0.1
 
       while (simulatedSkill < target) {
-        const degradationFactor = calculateSkillDegradation(simulatedSkill)
-        const expectedGain = avgGainPerRevive * degradationFactor
-
+        const expectedGain = avgGainPerRevive * calculateSkillDegradation(simulatedSkill)
         if (expectedGain <= 0) {
-          // Prevent infinite loop
           estimatedRevives = Number.POSITIVE_INFINITY
           break
         }
-
         estimatedRevives += stepSize / expectedGain
         simulatedSkill += stepSize
       }
 
-      // Calculate estimated days
       const estimatedDays = estimatedRevives / revivesPer24h
 
-      // Determine confidence level
       let confidence: "low" | "medium" | "high" = "medium"
       let warning: string | undefined
-
       if (gainCount < 10) {
         confidence = "low"
-        warning = "Low confidence: Limited data available. Estimate may be inaccurate."
-      } else if (gainCount >= 20) {
-        confidence = "high"
-      }
+        warning = "Low confidence: Limited data"
+      } else if (gainCount >= 20) confidence = "high"
 
-      // Add warnings for high skill levels
-      if (target >= 90) {
-        warning =
-          "At skill level 90+, gains are very small (0.01-0.02) regardless of hospital time. Progress will be slow."
-      } else if (target >= 80) {
-        warning = "Skill gains decrease significantly at higher levels. Actual progress may vary."
-      }
+      if (target >= 90) warning = "At 90+, gains are tiny (0.01-0.02)"
+      else if (target >= 80) warning = "Gains decrease at higher levels"
 
       setResult({
         currentSkill,
@@ -185,7 +149,7 @@ export function SkillGoalCalculator() {
         warning,
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to calculate skill goal estimate")
+      setError(err instanceof Error ? err.message : "Calculation failed")
     } finally {
       setLoading(false)
     }
@@ -194,7 +158,6 @@ export function SkillGoalCalculator() {
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
     if (!newOpen) {
-      // Reset state when closing
       setTargetSkill("")
       setResult(null)
       setError(null)
@@ -211,7 +174,7 @@ export function SkillGoalCalculator() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Skill Goal Calculator</DialogTitle>
-          <DialogDescription>Estimate how many revives you need to reach your target skill level</DialogDescription>
+          <DialogDescription>Estimate revives needed to reach target skill</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -225,9 +188,9 @@ export function SkillGoalCalculator() {
             <Input
               id="target-skill"
               type="number"
-              placeholder="Enter target skill (e.g., 50)"
+              placeholder="e.g., 50"
               value={targetSkill}
-              onChange={(e) => setTargetSkill(e.target.value)}
+              onChange={e => setTargetSkill(e.target.value)}
               disabled={loading}
               min={currentSkill}
               max={100}
@@ -303,15 +266,14 @@ export function SkillGoalCalculator() {
               )}
 
               <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-                This estimate accounts for skill degradation at higher levels using the formula: base gain × (1 - 0.208
-                × ln(skill)). Actual results may vary due to randomness and hospital time factors.
+                Estimate accounts for skill degradation: base gain × (1 - 0.208 × ln(skill)).
               </div>
             </div>
           )}
 
           <div className="text-xs text-muted-foreground text-center pt-2 border-t">
             <p className="mb-1">
-              <strong>Tip:</strong> Revive longer hospital times (Xanax OD, non-PvP injuries) for better gains.
+              <strong>Tip:</strong> Revive longer hospital times (Xanax OD, non-PvP) for better gains.
             </p>
             <p>
               Formula based on research by{" "}

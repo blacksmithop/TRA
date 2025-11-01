@@ -1,22 +1,22 @@
-from pydantic_settings import BaseSettings
+from typing import List, Union
+from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Application configuration settings.
-    
-    Attributes:
-        REDIS_HOST (str): Hostname or IP address of Redis server.
-            Default: "localhost"
-        REDIS_PORT (int): Port number for Redis server connection.
-            Default: 6379
-    """
-    
-    REDIS_HOST: str = "redis"
-    REDIS_PORT: int = 6379
-    
-    class Config:
-        env_file = ".env"
+    REDIS_HOST: str = Field("redis", description="Redis host")
+    REDIS_PORT: int = Field(6379, description="Redis port")
+
+    ALLOWED_ORIGINS: List[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "https://blacksmithop.github.io",
+            "https://tornrevive.page",
+        ],
+        description="Parsed list of allowed origins",
+    )
+
+    model_config = SettingsConfigDict(env_file=".env")
 
 
 settings = Settings()

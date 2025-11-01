@@ -64,6 +64,10 @@ export interface Revive {
   success_chance: number
   result: "success" | "failure"
   timestamp: number
+  Category: "PvP" | "OD" | "Crime" | null
+  Likelihood: string 
+  Chance: number
+  user_id: number
 }
 
 export interface RevivesResponse {

@@ -5,6 +5,7 @@ from app.core import api_config, fetch_torn_api, get_api_key
 from app.machine_learning import (
     calculate_skill_success_correlation,
     calculate_revive_chance,
+    enrich_revives
 )
 
 
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/logs", tags=["Torn API"])
 
 @router.get("/revives", response_model=models.ReviveResponse)
 async def revives(
+    user_id: int,
     to_timestamp: Optional[int] = None,
     timestamp: Optional[int] = Query(
         None, description="Bypass cache with current timestamp"
@@ -42,7 +44,9 @@ async def revives(
     data = await fetch_torn_api(
         api_key=api_key, endpoint=api_config.REVIVES_ENDPOINT, params=params, cache=cache
     )
-    return models.ReviveResponse(**data)
+    
+    enriched_data: models.ReviveResponse = enrich_revives(raw_revives=data, user_revive_id=user_id)
+    return enriched_data
 
 
 @router.get("/revivesfull", response_model=models.ReviveResponseFull)

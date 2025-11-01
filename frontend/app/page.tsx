@@ -42,6 +42,9 @@ interface ProfileData {
   }
 }
 
+type CategoryFilter = "All" | "PvP" | "OD" | "Crime"
+type LikelihoodFilter = "All" | "Low" | "Medium" | "High" | "Very High"
+
 export default function Home() {
   const router = useRouter()
   const [userId, setUserId] = useState<number | undefined>(undefined)
@@ -59,15 +62,20 @@ export default function Home() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [totalRevivesLoaded, setTotalRevivesLoaded] = useState(0)
   const [initialRevivesLoading, setInitialRevivesLoading] = useState(true)
-  const [filterType, setFilterType] = useState("all")
-  const [outcomeFilter, setOutcomeFilter] = useState("all")
-  const [dateFilter, setDateFilter] = useState("all")
+  const [filterType, setFilterType] = useState<"all" | "given" | "received">("all")
+  const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
+  const [dateFilter, setDateFilter] = useState<"all" | "7days" | "30days" | "90days">("all")
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("All")
+  const [likelihoodFilter, setLikelihoodFilter] = useState<LikelihoodFilter>("All")
   const [itemsPerPage, setItemsPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [showFullRevives, setShowFullRevives] = useState(false)
   const [selectedReviveId, setSelectedReviveId] = useState<number | null>(null)
   const [sortField, setSortField] = useState<"skill" | "chance" | "timestamp" | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
+
+  const categories: CategoryFilter[] = ["All", "PvP", "OD", "Crime"]
+  const likelihoods: LikelihoodFilter[] = ["All", "Low", "Medium", "High", "Very High"]
 
   useEffect(() => {
     if (!hasApiKey()) {
@@ -81,84 +89,56 @@ export default function Home() {
 
     const loadProfile = async () => {
       try {
-        console.log("[v0] Fetching user profile...")
         const profileData: ProfileData = await fetchProfile()
-        console.log("[v0] Profile fetched successfully:", profileData)
-
         if (!isMounted) return
-
-        if (!profileData?.profile?.id) {
-          throw new Error("Invalid profile data: missing user ID")
-        }
-
-        const fetchedUserId = profileData.profile.id
-        console.log("[v0] Setting userId to:", fetchedUserId)
-        setUserId(fetchedUserId)
+        if (!profileData?.profile?.id) throw new Error("Invalid profile data: missing user ID")
+        setUserId(profileData.profile.id)
       } catch (err) {
         console.error("[v0] Profile fetch error:", err)
-        if (err instanceof Error && err.message.includes("Access level")) {
-          setHasAccessError(true)
-        }
-        if (isMounted) {
-          setLoading(false)
-        }
+        if (err instanceof Error && err.message.includes("Access level")) setHasAccessError(true)
+        if (isMounted) setLoading(false)
       }
     }
 
     loadProfile()
-
-    return () => {
-      isMounted = false
-    }
+    return () => { isMounted = false }
   }, [])
 
   useEffect(() => {
-    if (typeof userId !== "number" || userId <= 0) {
-      console.log("[v0] Waiting for valid userId. Current value:", userId)
-      return
-    }
-
+    if (!userId) return
     let isMounted = true
 
     const loadRevivesData = async () => {
       try {
-        console.log("[v0] Fetching correlation and stats with userId:", userId)
-
-        const [correlationData, statsData, barsData] = await Promise.all([
+        const [corr, stats, bars] = await Promise.all([
           fetchReviveSkillCorrelation(userId),
           fetchReviveStats(),
           fetchBars(),
         ])
 
-        console.log("[v0] Correlation, stats, and bars fetched successfully")
+        if (!isMounted) return
+        setCorrelationData(corr)
+        setReviveStats(stats)
+        setBarsData(bars)
+        setLoading(false)
+        setIsLoadingMore(true)
 
-        if (isMounted) {
-          setCorrelationData(correlationData)
-          setReviveStats(statsData)
-          setBarsData(barsData)
-          setLoading(false)
-          setIsLoadingMore(true)
-          loadRevivesProgressively({
-            onBatchLoaded: (allRevives, isComplete) => {
-              if (!isMounted) return
-              const revivesData: RevivesResponse = { revives: allRevives }
-              setRevives(revivesData)
-              setTableRevives(revivesData)
-              setTotalRevivesLoaded(allRevives.length)
-              setInitialRevivesLoading(false)
-              if (isComplete) {
-                console.log("[v0] All revives loaded. Total:", allRevives.length)
-                setIsLoadingMore(false)
-              }
-            },
-            onError: (err) => {
-              if (!isMounted) return
-              console.error("[v0] Progressive load error:", err)
-              setIsLoadingMore(false)
-              setInitialRevivesLoading(false)
-            },
-          })
-        }
+        loadRevivesProgressively(userId, {
+          onBatchLoaded: (batch, isComplete) => {
+            if (!isMounted) return
+            const data: RevivesResponse = { revives: batch }
+            setRevives(data)
+            setTableRevives(data)
+            setTotalRevivesLoaded(batch.length)
+            setInitialRevivesLoading(false)
+            if (isComplete) setIsLoadingMore(false)
+          },
+          onError: () => {
+            if (!isMounted) return
+            setIsLoadingMore(false)
+            setInitialRevivesLoading(false)
+          },
+        })
       } catch (err) {
         console.error("[v0] Data fetch error:", err)
         if (isMounted) {
@@ -171,138 +151,111 @@ export default function Home() {
 
     loadRevivesData()
 
-    const barsInterval = setInterval(async () => {
+    const interval = setInterval(async () => {
       try {
-        const barsData = await fetchBars()
-        if (isMounted) {
-          setBarsData(barsData)
-        }
-      } catch (err) {
-        console.error("[v0] Failed to refresh bars:", err)
-      }
+        const bars = await fetchBars()
+        if (isMounted) setBarsData(bars)
+      } catch (_) {}
     }, 30000)
 
     return () => {
       isMounted = false
-      clearInterval(barsInterval)
+      clearInterval(interval)
     }
   }, [userId])
 
   const getFilteredRevives = (): Revive[] => {
     if (!tableRevives || !userId) return []
 
-    let filtered = [...tableRevives.revives]
+    let list = [...tableRevives.revives]
 
-    if (filterType === "given") {
-      filtered = filtered.filter((r) => r.reviver.id === userId)
-    } else if (filterType === "received") {
-      filtered = filtered.filter((r) => r.target.id === userId)
-    }
+    if (filterType === "given") list = list.filter(r => r.reviver.id === userId)
+    else if (filterType === "received") list = list.filter(r => r.target.id === userId)
 
-    if (outcomeFilter !== "all") {
-      filtered = filtered.filter((r) => r.result === outcomeFilter)
-    }
+    if (outcomeFilter !== "all") list = list.filter(r => r.result === outcomeFilter)
 
     if (dateFilter !== "all") {
       const now = Date.now() / 1000
-      const daysMap = { "7days": 7, "30days": 30, "90days": 90 }
-      const days = daysMap[dateFilter]
-      const cutoff = now - days * 24 * 60 * 60
-      filtered = filtered.filter((r) => r.timestamp >= cutoff)
+      const days = { "7days": 7, "30days": 30, "90days": 90 }[dateFilter]
+      const cutoff = now - days * 86400
+      list = list.filter(r => r.timestamp >= cutoff)
     }
+
+    list = list.filter(r => {
+      if (categoryFilter !== "All" && r.Category !== categoryFilter) return false
+      if (likelihoodFilter !== "All" && r.Likelihood !== likelihoodFilter) return false
+      return true
+    })
 
     if (sortField && sortDirection) {
-      filtered.sort((a, b) => {
-        let aValue: number
-        let bValue: number
-
+      list.sort((a, b) => {
+        let aVal = 0, bVal = 0
         if (sortField === "skill") {
-          aValue = a.reviver.skill ?? 0
-          bValue = b.reviver.skill ?? 0
+          aVal = a.reviver.skill ?? 0
+          bVal = b.reviver.skill ?? 0
         } else if (sortField === "chance") {
-          aValue = a.success_chance
-          bValue = b.success_chance
+          aVal = a.success_chance
+          bVal = b.success_chance
         } else {
-          aValue = a.timestamp
-          bValue = b.timestamp
+          aVal = a.timestamp
+          bVal = b.timestamp
         }
-
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue
+        return sortDirection === "asc" ? aVal - bVal : bVal - aVal
       })
     } else {
-      filtered.sort((a, b) => b.timestamp - a.timestamp)
+      list.sort((a, b) => b.timestamp - a.timestamp)
     }
 
-    return filtered
+    return list
   }
 
   const filteredRevives = getFilteredRevives()
 
-  const calculateSkillGains = (revives: Revive[]): Map<number, number> => {
-    const skillGains = new Map<number, number>()
-
-    const sortedRevives = [...revives]
-      .filter((r) => r.reviver.id === userId && r.reviver.skill != null)
+  const skillGains = (() => {
+    const map = new Map<number, number>()
+    const mine = filteredRevives
+      .filter(r => r.reviver.id === userId && r.reviver.skill != null)
       .sort((a, b) => a.timestamp - b.timestamp)
 
-    for (let i = 1; i < sortedRevives.length; i++) {
-      const currentSkill = sortedRevives[i].reviver.skill!
-      const previousSkill = sortedRevives[i - 1].reviver.skill!
-      const gain = currentSkill - previousSkill
-
-      if (gain > 0) {
-        skillGains.set(sortedRevives[i].id, gain)
-      }
+    for (let i = 1; i < mine.length; i++) {
+      const gain = mine[i].reviver.skill! - mine[i - 1].reviver.skill!
+      if (gain > 0) map.set(mine[i].id, gain)
     }
-
-    return skillGains
-  }
-
-  const skillGains = calculateSkillGains(filteredRevives)
+    return map
+  })()
 
   const totalPages = Math.ceil(filteredRevives.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedRevives = filteredRevives.slice(startIndex, endIndex)
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [filterType, dateFilter, itemsPerPage, outcomeFilter])
+  useEffect(() => setCurrentPage(1), [filterType, outcomeFilter, dateFilter, categoryFilter, likelihoodFilter, itemsPerPage])
 
   const reloadStatsAndGraph = async () => {
     if (!userId) return
-
     setLoadingStats(true)
     setLoadingGraph(true)
-
     try {
-      const [correlationData, statsData] = await Promise.all([fetchReviveSkillCorrelation(userId), fetchReviveStats()])
-
-      setCorrelationData(correlationData)
-      setReviveStats(statsData)
+      const [corr, stats] = await Promise.all([fetchReviveSkillCorrelation(userId), fetchReviveStats()])
+      setCorrelationData(corr)
+      setReviveStats(stats)
 
       setInitialRevivesLoading(true)
       setIsLoadingMore(true)
-      loadRevivesProgressively({
-        onBatchLoaded: (allRevives, isComplete) => {
-          const revivesData: RevivesResponse = { revives: allRevives }
-          setRevives(revivesData)
-          setTableRevives(revivesData)
-          setTotalRevivesLoaded(allRevives.length)
+      loadRevivesProgressively(userId, {
+        onBatchLoaded: (batch, done) => {
+          const data: RevivesResponse = { revives: batch }
+          setRevives(data)
+          setTableRevives(data)
+          setTotalRevivesLoaded(batch.length)
           setInitialRevivesLoading(false)
-
-          if (isComplete) {
-            setIsLoadingMore(false)
-          }
+          if (done) setIsLoadingMore(false)
         },
-        onError: (err) => {
-          console.error("[v0] Progressive load error:", err)
+        onError: () => {
           setIsLoadingMore(false)
           setInitialRevivesLoading(false)
         },
       })
-    } catch (err) {
-      console.error("[v0] Reload error:", err)
     } finally {
       setLoadingStats(false)
       setLoadingGraph(false)
@@ -311,35 +264,28 @@ export default function Home() {
 
   const reloadRevivesList = async () => {
     setLoadingRevivesList(true)
-
     try {
       if (showFullRevives) {
-        const revivesData = await fetchRevivesFull()
-        setTableRevives(revivesData)
+        const data = await fetchRevivesFull()
+        setTableRevives(data)
       } else {
         setInitialRevivesLoading(true)
         setIsLoadingMore(true)
-        loadRevivesProgressively({
-          onBatchLoaded: (allRevives, isComplete) => {
-            const revivesData: RevivesResponse = { revives: allRevives }
-            setRevives(revivesData)
-            setTableRevives(revivesData)
-            setTotalRevivesLoaded(allRevives.length)
+        loadRevivesProgressively(userId!, {
+          onBatchLoaded: (batch, done) => {
+            const data: RevivesResponse = { revives: batch }
+            setRevives(data)
+            setTableRevives(data)
+            setTotalRevivesLoaded(batch.length)
             setInitialRevivesLoading(false)
-
-            if (isComplete) {
-              setIsLoadingMore(false)
-            }
+            if (done) setIsLoadingMore(false)
           },
-          onError: (err) => {
-            console.error("[v0] Progressive load error:", err)
+          onError: () => {
             setIsLoadingMore(false)
             setInitialRevivesLoading(false)
           },
         })
       }
-    } catch (err) {
-      console.error("[v0] Reload error:", err)
     } finally {
       setLoadingRevivesList(false)
     }
@@ -348,37 +294,29 @@ export default function Home() {
   const handleFullRevivesToggle = async (checked: boolean) => {
     setShowFullRevives(checked)
     setLoadingRevivesList(true)
-
     try {
       if (checked) {
-        const revivesData = await fetchRevivesFull()
-        setTableRevives(revivesData)
+        const data = await fetchRevivesFull()
+        setTableRevives(data)
       } else {
         setInitialRevivesLoading(true)
         setIsLoadingMore(true)
-        loadRevivesProgressively({
-          onBatchLoaded: (allRevives, isComplete) => {
-            const revivesData: RevivesResponse = { revives: allRevives }
-            setRevives(revivesData)
-            setTableRevives(revivesData)
-            setTotalRevivesLoaded(allRevives.length)
+        loadRevivesProgressively(userId!, {
+          onBatchLoaded: (batch, done) => {
+            const data: RevivesResponse = { revives: batch }
+            setRevives(data)
+            setTableRevives(data)
+            setTotalRevivesLoaded(batch.length)
             setInitialRevivesLoading(false)
-
-            if (isComplete) {
-              setIsLoadingMore(false)
-            }
+            if (done) setIsLoadingMore(false)
           },
-          onError: (err) => {
-            console.error("[v0] Progressive load error:", err)
+          onError: () => {
             setIsLoadingMore(false)
             setInitialRevivesLoading(false)
           },
         })
       }
-
       setCurrentPage(1)
-    } catch (err) {
-      console.error("[v0] Toggle error:", err)
     } finally {
       setLoadingRevivesList(false)
     }
@@ -386,12 +324,8 @@ export default function Home() {
 
   const handleSort = (field: "skill" | "chance" | "timestamp") => {
     if (sortField === field) {
-      if (sortDirection === "asc") {
-        setSortDirection("desc")
-      } else if (sortDirection === "desc") {
-        setSortDirection(null)
-        setSortField(null)
-      }
+      setSortDirection(sortDirection === "asc" ? "desc" : null)
+      if (sortDirection === "desc") setSortField(null)
     } else {
       setSortField(field)
       setSortDirection("asc")
@@ -400,54 +334,43 @@ export default function Home() {
 
   const exportToExcel = () => {
     if (!filteredRevives.length) return
-
-    const exportData = filteredRevives.map((revive) => ({
-      Reviver: revive.reviver.name || `[${revive.reviver.id}]`,
-      "Reviver Faction": revive.reviver.faction?.name || "N/A",
-      Skill: revive.reviver.skill ?? "N/A",
-      Target: revive.target.name || `[${revive.target.id}]`,
-      "Target Faction": revive.target.faction?.name || "N/A",
-      "Hospitalized By": revive.target.hospital_reason,
-      "Success Chance": `${revive.success_chance}%`,
-      Outcome: revive.result === "success" ? "Success" : "Failure",
-      Timestamp: new Date(revive.timestamp * 1000).toLocaleString(),
+    const rows = filteredRevives.map(r => ({
+      Reviver: r.reviver.name || `[${r.reviver.id}]`,
+      "Reviver Faction": r.reviver.faction?.name || "N/A",
+      Skill: r.reviver.skill ?? "N/A",
+      Target: r.target.name || `[${r.target.id}]`,
+      "Target Faction": r.target.faction?.name || "N/A",
+      "Hospitalized By": r.target.hospital_reason,
+      Category: r.Category || "N/A",
+      Likelihood: r.Likelihood || "N/A",
+      "Success Chance": `${r.success_chance}%`,
+      Outcome: r.result === "success" ? "Success" : "Failure",
+      Timestamp: new Date(r.timestamp * 1000).toLocaleString(),
     }))
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Revives")
-
-    const maxWidth = 50
-    const colWidths = Object.keys(exportData[0] || {}).map((key) => {
-      const maxLength = Math.max(key.length, ...exportData.map((row) => String(row[key as keyof typeof row]).length))
-      return { wch: Math.min(maxLength + 2, maxWidth) }
-    })
-    worksheet["!cols"] = colWidths
-
-    XLSX.writeFile(workbook, `torn-revives-${new Date().toISOString().split("T")[0]}.xlsx`)
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Revives")
+    XLSX.writeFile(wb, `torn-revives-${new Date().toISOString().split("T")[0]}.xlsx`)
   }
 
   const SortIcon = ({ field }: { field: "skill" | "chance" | "timestamp" }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />
-    }
-    if (sortDirection === "asc") {
-      return <ArrowUp className="h-3 w-3 ml-1" />
-    }
-    return <ArrowDown className="h-3 w-3 ml-1" />
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />
+    return sortDirection === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />
   }
 
   const reloadEnergy = async () => {
     setLoadingEnergy(true)
     try {
-      const barsData = await fetchBars()
-      setBarsData(barsData)
-    } catch (err) {
-      console.error("[v0] Reload energy error:", err)
+      const bars = await fetchBars()
+      setBarsData(bars)
     } finally {
       setLoadingEnergy(false)
     }
   }
+
+  const headerGridClass = showFullRevives
+    ? "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+    : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
 
   if (loading) {
     return (
@@ -502,20 +425,9 @@ export default function Home() {
               <div
                 role="button"
                 tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  reloadEnergy()
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    reloadEnergy()
-                  }
-                }}
-                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
-                  loadingEnergy ? "pointer-events-none opacity-50" : ""
-                }`}
+                onClick={(e) => { e.stopPropagation(); reloadEnergy() }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); reloadEnergy() } }}
+                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${loadingEnergy ? "pointer-events-none opacity-50" : ""}`}
               >
                 <RefreshCw className={`h-4 w-4 ${loadingEnergy ? "animate-spin" : ""}`} />
               </div>
@@ -523,15 +435,11 @@ export default function Home() {
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             {loadingEnergy ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner className="h-6 w-6" />
-              </div>
+              <div className="flex items-center justify-center py-8"><Spinner className="h-6 w-6" /></div>
             ) : barsData ? (
               <EnergyBarDisplay energyBar={barsData.bars.energy} />
             ) : (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <p>Unable to load energy data</p>
-              </div>
+              <div className="flex items-center justify-center py-8 text-muted-foreground"><p>Unable to load energy data</p></div>
             )}
           </AccordionContent>
         </AccordionItem>
@@ -543,20 +451,9 @@ export default function Home() {
               <div
                 role="button"
                 tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  reloadStatsAndGraph()
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    reloadStatsAndGraph()
-                  }
-                }}
-                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
-                  loadingStats ? "pointer-events-none opacity-50" : ""
-                }`}
+                onClick={(e) => { e.stopPropagation(); reloadStatsAndGraph() }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); reloadStatsAndGraph() } }}
+                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${loadingStats ? "pointer-events-none opacity-50" : ""}`}
               >
                 <RefreshCw className={`h-4 w-4 ${loadingStats ? "animate-spin" : ""}`} />
               </div>
@@ -564,20 +461,10 @@ export default function Home() {
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             {loadingStats ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              revives &&
-              userId && (
-                <ReviveStatistics
-                  revives={revives.revives}
-                  userId={userId}
-                  correlationData={correlationData}
-                  reviveStats={reviveStats}
-                />
-              )
-            )}
+              <div className="flex items-center justify-center py-8"><Spinner className="h-6 w-6" /></div>
+            ) : revives && userId ? (
+              <ReviveStatistics revives={revives.revives} userId={userId} correlationData={correlationData} reviveStats={reviveStats} />
+            ) : null}
           </AccordionContent>
         </AccordionItem>
 
@@ -588,20 +475,9 @@ export default function Home() {
               <div
                 role="button"
                 tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  reloadStatsAndGraph()
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    reloadStatsAndGraph()
-                  }
-                }}
-                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
-                  loadingGraph ? "pointer-events-none opacity-50" : ""
-                }`}
+                onClick={(e) => { e.stopPropagation(); reloadStatsAndGraph() }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); reloadStatsAndGraph() } }}
+                className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${loadingGraph ? "pointer-events-none opacity-50" : ""}`}
               >
                 <RefreshCw className={`h-4 w-4 ${loadingGraph ? "animate-spin" : ""}`} />
               </div>
@@ -609,12 +485,10 @@ export default function Home() {
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             {loadingGraph ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              revives && userId && <ReviveSkillChart revives={revives.revives} userId={userId} />
-            )}
+              <div className="flex items-center justify-center py-8"><Spinner className="h-6 w-6" /></div>
+            ) : revives && userId ? (
+              <ReviveSkillChart revives={revives.revives} userId={userId} />
+            ) : null}
           </AccordionContent>
         </AccordionItem>
 
@@ -633,20 +507,9 @@ export default function Home() {
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    exportToExcel()
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      exportToExcel()
-                    }
-                  }}
-                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 px-3 cursor-pointer ${
-                    !filteredRevives.length ? "pointer-events-none opacity-50" : ""
-                  }`}
+                  onClick={(e) => { e.stopPropagation(); exportToExcel() }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); exportToExcel() } }}
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 px-3 cursor-pointer ${!filteredRevives.length ? "pointer-events-none opacity-50" : ""}`}
                 >
                   <Download className="h-4 w-4" />
                   Export to Excel
@@ -654,20 +517,9 @@ export default function Home() {
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    reloadRevivesList()
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      reloadRevivesList()
-                    }
-                  }}
-                  className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
-                    loadingRevivesList ? "pointer-events-none opacity-50" : ""
-                  }`}
+                  onClick={(e) => { e.stopPropagation(); reloadRevivesList() }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); reloadRevivesList() } }}
+                  className={`h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${loadingRevivesList ? "pointer-events-none opacity-50" : ""}`}
                 >
                   <RefreshCw className={`h-4 w-4 ${loadingRevivesList ? "animate-spin" : ""}`} />
                 </div>
@@ -676,33 +528,22 @@ export default function Home() {
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-3">
             {(loadingRevivesList || initialRevivesLoading) && !tableRevives ? (
-              <div className="flex items-center justify-center py-12">
-                <Spinner className="h-8 w-8" />
-              </div>
+              <div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>
             ) : (
               <>
                 <div className="flex items-center gap-3 pb-2 border-b">
-                  <Switch
-                    id="full-revives"
-                    checked={showFullRevives}
-                    onCheckedChange={handleFullRevivesToggle}
-                    disabled={loadingRevivesList}
-                  />
+                  <Switch id="full-revives" checked={showFullRevives} onCheckedChange={handleFullRevivesToggle} disabled={loadingRevivesList} />
                   <Label htmlFor="full-revives" className="text-sm font-medium cursor-pointer">
                     Full
-                    <span className="text-xs text-muted-foreground ml-2">
-                      (Shows all revives with IDs instead of names)
-                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">(Shows all revives with IDs instead of names)</span>
                   </Label>
                 </div>
 
                 <div className="flex items-end gap-2 flex-wrap">
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Filter by Type</Label>
-                    <Select value={filterType} onValueChange={setFilterType}>
-                      <SelectTrigger className="w-[160px]">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={filterType} onValueChange={setFilterType as any}>
+                      <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Revives</SelectItem>
                         <SelectItem value="given">Revives Given</SelectItem>
@@ -713,10 +554,8 @@ export default function Home() {
 
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Time Period</Label>
-                    <Select value={dateFilter} onValueChange={setDateFilter}>
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={dateFilter} onValueChange={setDateFilter as any}>
+                      <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Time</SelectItem>
                         <SelectItem value="7days">Last 7 Days</SelectItem>
@@ -728,10 +567,8 @@ export default function Home() {
 
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Filter by Outcome</Label>
-                    <Select value={outcomeFilter} onValueChange={setOutcomeFilter}>
-                      <SelectTrigger className="w-[150px]">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={outcomeFilter} onValueChange={setOutcomeFilter as any}>
+                      <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Outcomes</SelectItem>
                         <SelectItem value="success">Success</SelectItem>
@@ -741,11 +578,37 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Filter by Category</Label>
+                    <Select value={categoryFilter} onValueChange={(value: CategoryFilter) => setCategoryFilter(value)}>
+                      <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Filter by Likelihood</Label>
+                    <Select value={likelihoodFilter} onValueChange={(value: LikelihoodFilter) => setLikelihoodFilter(value)}>
+                      <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {likelihoods.map((lik) => (
+                          <SelectItem key={lik} value={lik}>
+                            {lik}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Items per Page</Label>
-                    <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number.parseInt(v))}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={itemsPerPage.toString()} onValueChange={v => setItemsPerPage(Number(v))}>
+                      <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="5">5</SelectItem>
                         <SelectItem value="10">10</SelectItem>
@@ -757,8 +620,7 @@ export default function Home() {
 
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    Showing {startIndex + 1}-{Math.min(endIndex, filteredRevives.length)} of {filteredRevives.length}{" "}
-                    revives
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredRevives.length)} of {filteredRevives.length} revives
                     {isLoadingMore && !showFullRevives && (
                       <span className="ml-2 inline-flex items-center gap-1">
                         <Spinner className="h-3 w-3" />
@@ -769,27 +631,15 @@ export default function Home() {
 
                   {totalPages > 1 && (
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
 
                       <div className="flex items-center gap-1">
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                           let pageNum: number
-                          if (totalPages <= 5) {
-                            pageNum = i + 1
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i
-                          } else {
-                            pageNum = currentPage - 2 + i
-                          }
+                          if (totalPages <= 5) pageNum = i + 1
+                          else if (currentPage <= 3) pageNum = i + 1
+                          else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i
+                          else pageNum = currentPage - 2 + i
 
                           return (
                             <Button
@@ -805,70 +655,46 @@ export default function Home() {
                         })}
                       </div>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
                     </div>
                   )}
                 </div>
 
                 <Card>
                   <ScrollArea className="h-[600px]">
-                    <CardContent
-                      className="p-0"
-                      onClick={(e) => {
-                        if (e.target === e.currentTarget) {
-                          setSelectedReviveId(null)
-                        }
-                      }}
-                    >
-                      <div
-                        className={
-                          showFullRevives
-                            ? "grid grid-cols-[1.2fr_1.2fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-                            : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.5fr_0.8fr_0.8fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-                        }
-                      >
+                    <CardContent className="p-0" onClick={e => e.target === e.currentTarget && setSelectedReviveId(null)}>
+                      <div className={headerGridClass}>
                         <div>Reviver</div>
                         <div>Faction</div>
-                        {!showFullRevives && (
-                          <div
-                            className="flex items-center cursor-pointer hover:text-foreground transition-colors"
-                            onClick={() => handleSort("skill")}
-                          >
-                            Skill
-                            <SortIcon field="skill" />
-                          </div>
-                        )}
+                        <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("skill")}>
+                          Skill <SortIcon field="skill" />
+                        </div>
                         <div>Target</div>
                         <div>Faction</div>
                         <div>Hospitalized by</div>
-                        <div
-                          className="flex items-center cursor-pointer hover:text-foreground transition-colors"
-                          onClick={() => handleSort("chance")}
-                        >
-                          Chance
-                          <SortIcon field="chance" />
-                        </div>
+                        {showFullRevives && <div>Category</div>}
+                        {showFullRevives && (
+                          <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("chance")}>
+                            Success Chance <SortIcon field="chance" />
+                          </div>
+                        )}
+                        <div>Likelihood</div>
                         <div>Outcome</div>
-                        <div>Timestamp</div>
+                        <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("timestamp")}>
+                          Timestamp <SortIcon field="timestamp" />
+                        </div>
                       </div>
 
                       {paginatedRevives.length > 0 ? (
                         <div>
-                          {paginatedRevives.map((revive) => (
+                          {paginatedRevives.map(r => (
                             <ReviveCard
-                              key={revive.id}
-                              revive={revive}
+                              key={r.id}
+                              revive={r}
                               showFullMode={showFullRevives}
-                              skillGain={skillGains.get(revive.id) ?? null}
-                              isSelected={selectedReviveId === revive.id}
-                              onClick={() => setSelectedReviveId(revive.id)}
+                              skillGain={skillGains.get(r.id) ?? null}
+                              isSelected={selectedReviveId === r.id}
+                              onClick={() => setSelectedReviveId(r.id)}
                             />
                           ))}
                         </div>
