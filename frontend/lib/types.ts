@@ -1,4 +1,10 @@
 // Torn City API Types
+// Revive Correlation
+export interface CorrelationData {
+  correlation: number
+  p_value: number
+}
+
 
 export interface TornProfile {
   player_id: number
