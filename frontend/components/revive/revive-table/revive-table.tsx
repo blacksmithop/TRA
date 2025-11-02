@@ -51,7 +51,7 @@ export function ReviveTable({
   const [successPercentFilter, setSuccessPercentFilter] = useState<"All" | "Low" | "Medium" | "High" | "Very High">("All")
   const [outcomeFilter, setOutcomeFilter] = useState<"all" | "success" | "failure">("all")
 
-  // Reset page when filters change
+  // Reset page on filter change
   useEffect(() => {
     setCurrentPage(1)
   }, [
@@ -67,7 +67,7 @@ export function ReviveTable({
     outcomeFilter,
   ])
 
-  // Filter + sort logic
+  // Filter + sort
   const getFilteredRevives = useMemo((): Revive[] => {
     if (!revives || !userId) return []
 
@@ -124,7 +124,7 @@ export function ReviveTable({
     sortDirection,
   ])
 
-  // Unique values for dropdowns
+  // Unique values
   const uniqueValues = useMemo(() => {
     if (!revives) return { revivers: [], reviverFactions: [], targets: [], targetFactions: [] }
     const revivers = new Set<string>()
@@ -209,25 +209,38 @@ export function ReviveTable({
             )}
           </span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); exportToExcel() }}
-              className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors border border-input bg-background shadow-sm hover:bg-accent h-8 px-3 cursor-pointer ${!getFilteredRevives.length ? "pointer-events-none opacity-50" : ""}`}
+            <div
+              onClick={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                exportToExcel()
+              }}
+              className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors border border-input bg-background shadow-sm hover:bg-accent h-8 px-3 cursor-pointer ${
+                !getFilteredRevives.length ? "pointer-events-none opacity-50" : ""
+              }`}
             >
               <Download className="h-4 w-4" />
-              Export to Excel
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onRefresh() }}
+              Export
+            </div>
+            <div
+              onClick={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                onRefresh()
+              }}
               className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent transition-colors cursor-pointer"
             >
               <RefreshCw className="h-4 w-4" />
-            </button>
+            </div>
           </div>
         </div>
       </AccordionTrigger>
+
       <AccordionContent className="px-4 pb-4 space-y-3">
         {(initialRevivesLoading || !revives) ? (
-          <div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>
+          <div className="flex items-center justify-center py-12">
+            <Spinner className="h-8 w-8" />
+          </div>
         ) : (
           <>
             <ReviveTableFilters
@@ -254,56 +267,72 @@ export function ReviveTable({
               onPageChange={setCurrentPage}
             />
 
-            <Card>
-              <ScrollArea className="h-[600px]">
-                <CardContent className="p-0">
-                  <ReviveTableHeader
-                    showFullRevives={showFullRevives}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    filters={{
-                      reviverName: reviverNameFilter,
-                      targetName: targetNameFilter,
-                      reviverFaction: reviverFactionFilter,
-                      targetFaction: targetFactionFilter,
-                      successPercent: successPercentFilter,
-                      outcome: outcomeFilter,
-                    }}
-                    uniqueValues={uniqueValues}
-                    onSort={handleSort}
-                    onFilterChange={(key, value) => {
-                      switch (key) {
-                        case "reviverName": setReviverNameFilter(value); break
-                        case "targetName": setTargetNameFilter(value); break
-                        case "reviverFaction": setReviverFactionFilter(value); break
-                        case "targetFaction": setTargetFactionFilter(value); break
-                        case "successPercent": setSuccessPercentFilter(value); break
-                        case "outcome": setOutcomeFilter(value); break
-                      }
-                    }}
-                  />
-
-                  {paginatedRevives.length > 0 ? (
-                    <div>
-                      {paginatedRevives.map(r => (
-                        <ReviveTableRow
-                          key={r.id}
-                          revive={r}
-                          showFullMode={showFullRevives}
-                          skillGain={skillGains.get(r.id) ?? null}
-                          isSelected={selectedReviveId === r.id}
-                          onClick={() => setSelectedReviveId(r.id)}
+            {/* RESPONSIVE HORIZONTAL SCROLL WRAPPER */}
+            <div className="overflow-x-auto -mx-4 px-4 sm:-mx-0 sm:px-0">
+              <div className="inline-block min-w-full align-middle">
+                <Card className="border-0">
+                  <ScrollArea className="h-[600px] rounded-md">
+                    <CardContent className="p-0">
+                      {/* Sticky Header */}
+                      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+                        <ReviveTableHeader
+                          showFullRevives={showFullRevives}
+                          sortField={sortField}
+                          sortDirection={sortDirection}
+                          filters={{
+                            reviverName: reviverNameFilter,
+                            targetName: targetNameFilter,
+                            reviverFaction: reviverFactionFilter,
+                            targetFaction: targetFactionFilter,
+                            successPercent: successPercentFilter,
+                            outcome: outcomeFilter,
+                          }}
+                          uniqueValues={uniqueValues}
+                          onSort={handleSort}
+                          onFilterChange={(key, value) => {
+                            switch (key) {
+                              case "reviverName": setReviverNameFilter(value); break
+                              case "targetName": setTargetNameFilter(value); break
+                              case "reviverFaction": setReviverFactionFilter(value); break
+                              case "targetFaction": setTargetFactionFilter(value); break
+                              case "successPercent": setSuccessPercentFilter(value); break
+                              case "outcome": setOutcomeFilter(value); break
+                            }
+                          }}
                         />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex min-h-[200px] items-center justify-center">
-                      <p className="text-muted-foreground">No revives found with current filters</p>
-                    </div>
-                  )}
-                </CardContent>
-              </ScrollArea>
-            </Card>
+                      </div>
+
+                      {paginatedRevives.length > 0 ? (
+                        <div>
+                          {paginatedRevives.map(r => (
+                            <ReviveTableRow
+                              key={r.id}
+                              revive={r}
+                              showFullMode={showFullRevives}
+                              skillGain={skillGains.get(r.id) ?? null}
+                              isSelected={selectedReviveId === r.id}
+                              onClick={() => setSelectedReviveId(r.id)}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex min-h-[200px] items-center justify-center">
+                          <p className="text-muted-foreground">No revives found</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              </div>
+
+              {/* Mobile Scroll Hint */}
+              <div className="flex justify-center mt-2 sm:hidden">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground animate-pulse">
+                  <span>Scroll horizontally</span>
+                  <span>→</span>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </AccordionContent>
