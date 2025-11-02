@@ -1,14 +1,16 @@
 "use client"
 
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Spinner } from "@/components/ui/spinner"
 import { RefreshCw } from "lucide-react"
+import { EnergyBarDisplay } from "@/components/energy-bar-display"
+import type { UserBarsResponse } from "@/lib/types"
 
 interface Props {
   loading: boolean
-  barsData: any
+  barsData: UserBarsResponse | null
   onRefresh: () => void
 }
 
@@ -38,15 +40,19 @@ export function EnergyPlanSection({ loading, barsData, onRefresh }: Props) {
           <div className="flex items-center justify-center py-12">
             <Spinner className="h-8 w-8" />
           </div>
-        ) : (
-          <Card>
-            <ScrollArea className="h-[400px]">
-              <CardContent className="p-4">
-                {/* Your energy plan content here */}
-                <pre className="text-xs">{JSON.stringify(barsData, null, 2)}</pre>
-              </CardContent>
+        ) : barsData?.bars.energy ? (
+          <Card className="border-0">
+            {/* REMOVED fixed height → fits content */}
+            <ScrollArea className="max-h-[520px] rounded-md">
+              <div className="p-4">
+                <EnergyBarDisplay energyBar={barsData.bars.energy} />
+              </div>
             </ScrollArea>
           </Card>
+        ) : (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-muted-foreground">No energy data available</p>
+          </div>
         )}
       </AccordionContent>
     </AccordionItem>
