@@ -19,7 +19,7 @@ export function EnergyPlanSection({ loading, barsData, onRefresh }: Props) {
     <AccordionItem value="energy" className="border rounded-lg">
       <AccordionTrigger className="px-4 hover:no-underline">
         <div className="flex items-center justify-between w-full pr-4">
-          <span className="text-lg font-semibold">Plan</span>
+          <span className="text-lg font-semibold">Cost/Revive</span>
           <div
             onClick={(e) => {
               e.stopPropagation()
