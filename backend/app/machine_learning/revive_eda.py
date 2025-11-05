@@ -1,12 +1,11 @@
-# app/machine_learning/revive_eda.py
 from typing import List, Dict, Any
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from app import models
 
+
 def _ensure_list_of_dicts(data: Any) -> List[Dict[str, Any]]:
-    """Normalise any plausible payload → list[dict]"""
     if isinstance(data, list):
         return data
     if isinstance(data, pd.DataFrame):
@@ -22,12 +21,6 @@ def enrich_revives(
     raw_revives: Any,
     user_revive_id: int,
 ) -> models.ReviveResponse:
-    """
-    Returns a **fully-validated** ``models.ReviveResponse`` instance.
-
-    All enriched columns are added **as top-level keys** on each revive dict
-    (``Success``, ``Category``, ``Chance``, ``Likelihood``, ``Gain``).
-    """
     revives = _ensure_list_of_dicts(raw_revives)
     if not revives:
         return models.ReviveResponse(
@@ -35,15 +28,9 @@ def enrich_revives(
             _metadata=models.MetadataFull(total=0, enriched_at=datetime.utcnow()),
         )
 
-    # ------------------------------------------------------------------
-    # 2. DataFrame with a clean sequential index
-    # ------------------------------------------------------------------
     df = pd.DataFrame(revives).reset_index(drop=True)
 
-    # ------------------------------------------------------------------
-    # 3. Top-level derived columns
-    # ------------------------------------------------------------------
-    df["Success"] = df["result"].apply(lambda x: x == "success")
+    df["Success"] = df["result"] == "success"
     df["Hospitalized By"] = df["target"].apply(lambda t: t.get("hospital_reason", ""))
 
     def _category(reason: str) -> str:
@@ -64,37 +51,31 @@ def enrich_revives(
         df["Chance"], bins=bins, labels=labels, include_lowest=True
     )
 
-    # ------------------------------------------------------------------
-    # 4. Skill-Gain (only for revives *given* by the user)
-    # ------------------------------------------------------------------
     gain_col = "Gain"
     df[gain_col] = np.nan
 
-    reviver_ids = df["reviver"].apply(lambda r: r.get("id"))
-    target_ids = df["target"].apply(lambda t: t.get("id"))
-    mask_my = (reviver_ids == user_revive_id) & (target_ids != user_revive_id)
+    reviver_ids = pd.to_numeric(df["reviver"].apply(lambda r: r.get("id")), errors="coerce")
+    target_ids = pd.to_numeric(df["target"].apply(lambda t: t.get("id")), errors="coerce")
 
-    my_idx = df.index[mask_my].tolist()
-    if my_idx:
-        skills = df.loc[mask_my, "reviver"].apply(lambda r: r.get("revive_skill", 0.0))
-        gains = skills.diff(periods=-1).round(2)               # next - current
-        prev_skill = skills.shift(1)
-        gains = np.where(prev_skill >= 100, 0.0, gains)       # cap at 100
+    mask_my_revives = (reviver_ids == user_revive_id) & (target_ids != user_revive_id)
+    mask_success = df["result"] == "success"
+    mask = mask_my_revives & mask_success
 
-        # Convert to Series → safe .iloc assignment for the last row
-        gains_series = pd.Series(gains, index=skills.index)
-        gains_series.iloc[-1] = np.nan
-        df.loc[my_idx, gain_col] = gains_series.values
+    my_successful_idx = df.index[mask].tolist()
+    if len(my_successful_idx) >= 2:
+        my_df = df.loc[mask].sort_values("timestamp").reset_index(drop=True)
+        skills = pd.to_numeric(my_df["reviver"].apply(lambda r: r.get("revive_skill", np.nan)), errors="coerce")
+        gains = skills.diff(periods=-1).round(2)
+        gains = pd.Series(np.where(skills.shift(-1) >= 100, 0.0, gains), index=gains.index)
+        gains.iloc[-1] = np.nan
+        original_idx = my_df.index
+        df.loc[original_idx[:-1], gain_col] = gains.iloc[:-1].values
 
-    # ------------------------------------------------------------------
-    # 5. Build list of enriched dicts (Pydantic will validate)
-    # ------------------------------------------------------------------
     enriched_dicts = []
     new_fields = ["Success", "Category", "Chance", "Likelihood", "Gain"]
 
     for i in range(len(df)):
         rec = df.iloc[i].to_dict()
-        # Pull only the original API fields + the enriched ones
         base = {
             "id": rec["id"],
             "reviver": rec["reviver"],
@@ -103,19 +84,15 @@ def enrich_revives(
             "success_chance": rec["success_chance"],
             "timestamp": rec["timestamp"],
         }
-        # Add enriched top-level fields (None if NaN)
         for f in new_fields:
             val = rec.get(f)
             base[f] = None if pd.isna(val) else val
-
         enriched_dicts.append(base)
 
-    # ------------------------------------------------------------------
-    # 6. Return the fully-typed response
-    # ------------------------------------------------------------------
     return models.ReviveResponse(
         revives=[models.ReviveFull(**d) for d in enriched_dicts],
         _metadata=models.MetadataFull(
-            links={} # whats this for?
+            links={},
+            enriched_at=datetime.utcnow(),
         ),
     )
