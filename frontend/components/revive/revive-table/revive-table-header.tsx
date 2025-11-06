@@ -16,7 +16,6 @@ interface FilterState {
 }
 
 interface Props {
-  showFullRevives: boolean
   sortField: SortField
   sortDirection: SortDirection
   filters: FilterState
@@ -33,7 +32,6 @@ interface Props {
 const successPercents: FilterState["successPercent"][] = ["All", "Low", "Medium", "High", "Very High"]
 
 export function ReviveTableHeader({
-  showFullRevives,
   sortField,
   sortDirection,
   filters,
@@ -92,9 +90,7 @@ export function ReviveTableHeader({
     }
   }
 
-  const gridClass = showFullRevives
-    ? "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1fr_1.2fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
-    : "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_1fr_0.8fr_1.2fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+  const gridClass = "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1.2fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
 
   return (
     <div className={gridClass}>
@@ -268,23 +264,19 @@ export function ReviveTableHeader({
       </div>
 
       <div>Hospitalized by</div>
-      {showFullRevives && <div>Category</div>}
-      {showFullRevives && (
-        <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => onSort("chance")}>
-          Success % <SortIcon field="chance" />
-        </div>
-      )}
-
-      {/* Success % */}
+      
+      <div>Category</div>
+      
+      {/* Likelihood */}
       <div className="relative flex items-center gap-1">
-        <span>Success %</span>
+        <span>Likelihood</span>
         <button onClick={(e) => { e.stopPropagation(); handleFilterClick("successPercent") }} className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("successPercent") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}>
           <Filter className="h-3 w-3" />
         </button>
         {activeFilter === "successPercent" && (
           <div ref={dropdownRef} className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-md shadow-lg z-20 p-3">
             <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">Filter Success %</span>
+              <span className="text-sm font-medium">Filter Likelihood</span>
               <button onClick={() => setActiveFilter(null)}><X className="h-3 w-3" /></button>
             </div>
             <select

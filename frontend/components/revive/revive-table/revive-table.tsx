@@ -16,22 +16,18 @@ import type { RevivesResponse, Revive } from "@/lib/types"
 interface Props {
   userId: number
   revives: RevivesResponse | null
-  showFullRevives: boolean
   isLoadingMore: boolean
   totalRevivesLoaded: number
   initialRevivesLoading: boolean
-  onFullToggle: (checked: boolean) => void
   onRefresh: () => void
 }
 
 export function ReviveTable({
   userId,
   revives,
-  showFullRevives,
   isLoadingMore,
   totalRevivesLoaded,
   initialRevivesLoading,
-  onFullToggle,
   onRefresh,
 }: Props) {
   const [filterType, setFilterType] = useState<"all" | "given" | "received">("all")
@@ -248,13 +244,11 @@ export function ReviveTable({
               dateFilter={dateFilter}
               categoryFilter={categoryFilter}
               itemsPerPage={itemsPerPage}
-              showFullRevives={showFullRevives}
               loadingRevivesList={false}
               onFilterTypeChange={setFilterType}
               onDateFilterChange={setDateFilter}
               onCategoryChange={setCategoryFilter}
               onItemsPerPageChange={v => setItemsPerPage(Number(v))}
-              onFullToggle={onFullToggle}
             />
 
             <ReviveTablePagination
@@ -276,7 +270,6 @@ export function ReviveTable({
                       {/* Sticky Header */}
                       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
                         <ReviveTableHeader
-                          showFullRevives={showFullRevives}
                           sortField={sortField}
                           sortDirection={sortDirection}
                           filters={{
@@ -308,7 +301,6 @@ export function ReviveTable({
                             <ReviveTableRow
                               key={r.id}
                               revive={r}
-                              showFullMode={showFullRevives}
                               skillGain={skillGains.get(r.id) ?? null}
                               isSelected={selectedReviveId === r.id}
                               onClick={() => setSelectedReviveId(r.id)}

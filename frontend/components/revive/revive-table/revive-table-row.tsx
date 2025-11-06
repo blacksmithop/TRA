@@ -3,7 +3,6 @@ import type { Revive } from "@/lib/types"
 
 interface Props {
   revive: Revive
-  showFullMode: boolean
   skillGain: number | null
   isSelected: boolean
   onClick: () => void
@@ -11,7 +10,6 @@ interface Props {
 
 export function ReviveTableRow({
   revive,
-  showFullMode,
   skillGain,
   isSelected,
   onClick,
@@ -19,7 +17,6 @@ export function ReviveTableRow({
   return (
     <ReviveCard
       revive={revive}
-      showFullMode={showFullMode}
       skillGain={skillGain}
       isSelected={isSelected}
       onClick={onClick}

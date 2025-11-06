@@ -74,7 +74,6 @@ export default function Home() {
       </div>
 
       <Accordion type="multiple" defaultValue={["energy", "statistics", "graph", "revives"]} className="space-y-4">
-        <EnergyPlanSection loading={loadingEnergy} barsData={barsData} onRefresh={reloadEnergy} />
         <ReviveStatsSection
           loading={loadingStats}
           revives={revives?.revives || []}
@@ -92,13 +91,13 @@ export default function Home() {
         <ReviveTable
           userId={userId!}
           revives={revives}
-          showFullRevives={showFullRevives}
           isLoadingMore={isLoadingMore}
           totalRevivesLoaded={totalRevivesLoaded}
           initialRevivesLoading={initialRevivesLoading}
           onFullToggle={handleFullRevivesToggle}
           onRefresh={reloadRevivesList}
         />
+        <EnergyPlanSection loading={loadingEnergy} barsData={barsData} onRefresh={reloadEnergy} />
       </Accordion>
     </div>
   )
