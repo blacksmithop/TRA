@@ -291,7 +291,7 @@ export function SkillGoalCalculator() {
               )}
 
               <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-                Gains based on historical data (avg per bucket): 0:0.25, 10:0.18, 20:0.14, 30:0.11, 40:0.08, 50:0.06, 90+:0.015. Extrapolated linearly 50-90.
+                Gains based on historical data (avg per bucket)
               </div>
             </div>
           )}
