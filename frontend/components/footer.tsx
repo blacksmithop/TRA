@@ -2,7 +2,7 @@ import { Github } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t border-border bg-card sticky bottom-0 z-40">
       <div className="mx-auto max-w-6xl px-4 py-6 md:px-8">
         <div className="flex items-center justify-center gap-4">
           <p className="text-base text-muted-foreground">

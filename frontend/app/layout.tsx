@@ -28,8 +28,10 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} flex min-h-screen flex-col`}>
         <Header />
-        <main className="flex-1">
-          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <main className="flex-1 overflow-auto">
+          <div className="min-h-full">
+            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+          </div>
         </main>
         <Footer />
         <Analytics />

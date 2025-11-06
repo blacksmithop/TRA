@@ -56,7 +56,7 @@ export function Header() {
   console.log("[v0] Header: Render state", { isClient, isLoginPage, isAuthenticated, pathname })
 
   return (
-    <header className="border-b border-border bg-card">
+    <header className="border-b border-border bg-card sticky top-0 z-50">
       <div className="mx-auto max-w-6xl px-4 py-4 md:px-8">
         <div className="flex items-center justify-between">
           <div className="flex-1" />
