@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Search } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Search, DollarSign } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
 
 type SortField = "skill" | "chance" | "timestamp" | null
@@ -92,7 +92,8 @@ export function ReviveTableHeader({
     }
   }
 
-  const gridClass = "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1.2fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+  // Updated grid: 10 columns (removed Outcome, added Payment at end)
+  const gridClass = "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_1.2fr_0.6fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
 
   return (
     <div className={gridClass}>
@@ -130,7 +131,7 @@ export function ReviveTableHeader({
                   className="p-1 hover:bg-accent rounded cursor-pointer text-sm"
                   onClick={() => {
                     onFilterChange("reviverName", name)
-                    setActiveFilter(null)  // Close after selection
+                    setActiveFilter(null)
                   }}
                 >
                   {name}
@@ -143,7 +144,7 @@ export function ReviveTableHeader({
                 size="sm" 
                 onClick={() => {
                   onFilterChange("reviverName", "")
-                  setActiveFilter(null)  // Close on clear
+                  setActiveFilter(null)
                 }} 
                 className="w-full mt-2 text-xs"
               >
@@ -187,7 +188,7 @@ export function ReviveTableHeader({
                   className="p-1 hover:bg-accent rounded cursor-pointer text-sm" 
                   onClick={() => {
                     onFilterChange("reviverFaction", f)
-                    setActiveFilter(null)  // Close after selection
+                    setActiveFilter(null)
                   }}
                 >
                   {f}
@@ -200,7 +201,7 @@ export function ReviveTableHeader({
                 size="sm" 
                 onClick={() => {
                   onFilterChange("reviverFaction", "")
-                  setActiveFilter(null)  // Close on clear
+                  setActiveFilter(null)
                 }} 
                 className="w-full mt-2 text-xs"
               >
@@ -249,7 +250,7 @@ export function ReviveTableHeader({
                   className="p-1 hover:bg-accent rounded cursor-pointer text-sm" 
                   onClick={() => {
                     onFilterChange("targetName", t)
-                    setActiveFilter(null)  // Close after selection
+                    setActiveFilter(null)
                   }}
                 >
                   {t}
@@ -262,7 +263,7 @@ export function ReviveTableHeader({
                 size="sm" 
                 onClick={() => {
                   onFilterChange("targetName", "")
-                  setActiveFilter(null)  // Close on clear
+                  setActiveFilter(null)
                 }} 
                 className="w-full mt-2 text-xs"
               >
@@ -306,7 +307,7 @@ export function ReviveTableHeader({
                   className="p-1 hover:bg-accent rounded cursor-pointer text-sm" 
                   onClick={() => {
                     onFilterChange("targetFaction", f)
-                    setActiveFilter(null)  // Close after selection
+                    setActiveFilter(null)
                   }}
                 >
                   {f}
@@ -319,7 +320,7 @@ export function ReviveTableHeader({
                 size="sm" 
                 onClick={() => {
                   onFilterChange("targetFaction", "")
-                  setActiveFilter(null)  // Close on clear
+                  setActiveFilter(null)
                 }} 
                 className="w-full mt-2 text-xs"
               >
@@ -330,10 +331,12 @@ export function ReviveTableHeader({
         )}
       </div>
 
+      {/* Hospitalized By */}
       <div>Hospitalized by</div>
-      
+
+      {/* Category */}
       <div>Category</div>
-      
+
       {/* Likelihood */}
       <div className="relative flex items-center gap-1">
         <span>Likelihood</span>
@@ -359,7 +362,7 @@ export function ReviveTableHeader({
               value={filters.successPercent}
               onChange={(e) => {
                 onFilterChange("successPercent", e.target.value)
-                setActiveFilter(null)  // Close after selection
+                setActiveFilter(null)
               }}
               className="w-full px-2 py-1 text-sm border rounded bg-background mb-2"
             >
@@ -373,7 +376,7 @@ export function ReviveTableHeader({
                 size="sm" 
                 onClick={() => {
                   onFilterChange("successPercent", "All")
-                  setActiveFilter(null)  // Close on clear
+                  setActiveFilter(null)
                 }} 
                 className="w-full text-xs"
               >
@@ -384,52 +387,14 @@ export function ReviveTableHeader({
         )}
       </div>
 
-      {/* Outcome */}
-      <div className="relative flex items-center gap-1">
-        <span>Outcome</span>
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleFilterClick("outcome") }} 
-          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("outcome") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
-        >
-          <Filter className="h-3 w-3" />
-        </button>
-        {activeFilter === "outcome" && (
-          <div ref={dropdownRef} className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-md shadow-lg z-20 p-3">
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">Filter Outcome</span>
-              <button onClick={() => setActiveFilter(null)}><X className="h-3 w-3" /></button>
-            </div>
-            <select
-              value={filters.outcome}
-              onChange={(e) => {
-                onFilterChange("outcome", e.target.value)
-                setActiveFilter(null)  // Close after selection
-              }}
-              className="w-full px-2 py-1 text-sm border rounded bg-background mb-2"
-            >
-              <option value="all">All</option>
-              <option value="success" className="text-green-500">Success</option>
-              <option value="failure" className="text-red-500">Failure</option>
-            </select>
-            {filters.outcome !== "all" && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  onFilterChange("outcome", "all")
-                  setActiveFilter(null)  // Close on clear
-                }} 
-                className="w-full text-xs"
-              >
-                Clear
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-
+      {/* Timestamp */}
       <div className="flex items-center cursor-pointer hover:text-foreground transition-colors" onClick={() => onSort("timestamp")}>
         Timestamp <SortIcon field="timestamp" />
+      </div>
+
+      {/* Payment Header */}
+      <div className="flex justify-center">
+        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
       </div>
     </div>
   )

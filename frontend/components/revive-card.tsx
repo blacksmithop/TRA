@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Revive } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
-import { Activity, Minus, TrendingUp, Shield, Pill, Briefcase } from "lucide-react"
+import { TrendingUp, Shield, Pill, Briefcase, DollarSign } from "lucide-react"
 
 interface ReviveCardProps {
   revive: Revive
@@ -13,15 +13,6 @@ interface ReviveCardProps {
 }
 
 export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: ReviveCardProps) {
-  const formatDate = (timestamp: number) =>
-    new Date(timestamp * 1000).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-
   const getTornProfileUrl = (userId: number) => `https://www.torn.com/profiles.php?XID=${userId}`
   const getTornFactionUrl = (factionId: number) => `https://www.torn.com/factions.php?step=profile&ID=${factionId}`
 
@@ -43,7 +34,6 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
     }
   }
 
-  // Color based on Likelihood (used only for % badge)
   const getLikelihoodColor = (likelihood: string) => {
     switch (likelihood) {
       case "Low": return "bg-red-500/15 text-red-500"
@@ -54,13 +44,60 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
     }
   }
 
-  // Format percentage: no decimals, clean look
+  // Payment state
+  const [paymentStatus, setPaymentStatus] = useState<"paid" | "unpaid" | null>(null)
+
+  useEffect(() => {
+    const key = `revive-payment-${revive.timestamp}`
+    const saved = localStorage.getItem(key)
+    if (saved === "paid" || saved === "unpaid") {
+      setPaymentStatus(saved)
+    }
+  }, [revive.timestamp])
+
+  const togglePayment = () => {
+    const key = `revive-payment-${revive.timestamp}`
+    const next = paymentStatus === "paid" ? "unpaid" : paymentStatus === "unpaid" ? null : "paid"
+    setPaymentStatus(next)
+    if (next) {
+      localStorage.setItem(key, next)
+    } else {
+      localStorage.removeItem(key)
+    }
+  }
+
   const pct = revive.Chance != null ? `${Math.round(revive.Chance)}%` : "—"
+
+  // Format timestamp
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp * 1000)
+    const now = new Date()
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear()
+
+    if (isToday) {
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } else {
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }) + " " + date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    }
+  }
 
   return (
     <div
       onClick={onClick}
-      className={`grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1.2fr] gap-3 px-2 sm:px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`}
+      className={`grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_1.2fr_0.6fr] gap-3 px-2 sm:px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`}
     >
       {/* Reviver */}
       <div className="truncate">
@@ -128,7 +165,7 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         )}
       </div>
 
-      {/* SUCCESS % ONLY – Color-coded by Likelihood */}
+      {/* SUCCESS % */}
       <div className="flex justify-center">
         <div
           className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getLikelihoodColor(revive.Likelihood || "Low")}`}
@@ -137,17 +174,31 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         </div>
       </div>
 
-      {/* Outcome */}
-      <div className="flex justify-center items-center">
-        {revive.result === "success" ? (
-          <Activity className="h-4 w-4 text-green-500" />
-        ) : (
-          <Minus className="h-4 w-4 text-red-500" />
-        )}
+      {/* Timestamp – Condensed */}
+      <div className="text-muted-foreground text-xs whitespace-nowrap">
+        {formatTimestamp(revive.timestamp)}
       </div>
 
-      {/* Timestamp */}
-      <div className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(revive.timestamp)}</div>
+      {/* PAYMENT ICON – At End */}
+      <div className="flex justify-center">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            togglePayment()
+          }}
+          className="group"
+          title={paymentStatus === "paid" ? "Paid" : paymentStatus === "unpaid" ? "Unpaid" : "Mark as paid/unpaid"}
+        >
+          <DollarSign
+            className={`
+              h-4 w-4 transition-all duration-200
+              ${paymentStatus === "paid" ? "text-green-500 scale-110" : ""}
+              ${paymentStatus === "unpaid" ? "text-red-500" : ""}
+              ${paymentStatus === null ? "text-muted-foreground group-hover:text-foreground" : ""}
+            `}
+          />
+        </button>
+      </div>
     </div>
   )
 }
