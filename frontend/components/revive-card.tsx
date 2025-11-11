@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import type { Revive } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, Shield, Pill, Briefcase, DollarSign } from "lucide-react"
+import { TrendingUp, Shield, Pill, Briefcase, DollarSign, Activity, Minus } from "lucide-react"
 
 interface ReviveCardProps {
   revive: Revive
@@ -68,7 +68,7 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
 
   const pct = revive.Chance != null ? `${Math.round(revive.Chance)}%` : "—"
 
-  // Format timestamp
+  // Format timestamp: Today → 08:26 AM, Older → 11-11-2025 08:25 AM
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp * 1000)
     const now = new Date()
@@ -97,7 +97,7 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
   return (
     <div
       onClick={onClick}
-      className={`grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_1.2fr_0.6fr] gap-3 px-2 sm:px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`}
+      className={`grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1.2fr_0.6fr] gap-3 px-2 sm:px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`}
     >
       {/* Reviver */}
       <div className="truncate">
@@ -172,6 +172,15 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         >
           {pct}
         </div>
+      </div>
+
+      {/* OUTCOME ICON – RESTORED */}
+      <div className="flex justify-center items-center">
+        {revive.result === "success" ? (
+          <Activity className="h-4 w-4 text-green-500" />
+        ) : (
+          <Minus className="h-4 w-4 text-red-500" />
+        )}
       </div>
 
       {/* Timestamp – Condensed */}

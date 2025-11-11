@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Search, DollarSign } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Search, DollarSign, Activity, Minus } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
 
 type SortField = "skill" | "chance" | "timestamp" | null
@@ -92,8 +92,8 @@ export function ReviveTableHeader({
     }
   }
 
-  // Updated grid: 10 columns (removed Outcome, added Payment at end)
-  const gridClass = "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_1.2fr_0.6fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
+  // Grid: 11 columns (Outcome restored, Payment at end)
+  const gridClass = "grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1.2fr_0.6fr] gap-3 px-2 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/50 border-b border-border sticky top-0 z-10"
 
   return (
     <div className={gridClass}>
@@ -379,6 +379,84 @@ export function ReviveTableHeader({
                   setActiveFilter(null)
                 }} 
                 className="w-full text-xs"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Outcome – RESTORED WITH ICONS */}
+      <div className="relative flex items-center gap-1">
+        <span>Outcome</span>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleFilterClick("outcome") }} 
+          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("outcome") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+        >
+          <Filter className="h-3 w-3" />
+        </button>
+        {activeFilter === "outcome" && (
+          <div ref={dropdownRef} className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-md shadow-lg z-20 p-3">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium">Filter Outcome</span>
+              <button onClick={() => setActiveFilter(null)}><X className="h-3 w-3" /></button>
+            </div>
+            <div className="space-y-1">
+              <label className="flex items-center gap-2 cursor-pointer p-1 hover:bg-accent rounded">
+                <input
+                  type="radio"
+                  name="outcome"
+                  value="all"
+                  checked={filters.outcome === "all"}
+                  onChange={(e) => {
+                    onFilterChange("outcome", e.target.value)
+                    setActiveFilter(null)
+                  }}
+                  className="hidden"
+                />
+                <span className="text-xs">All</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer p-1 hover:bg-accent rounded">
+                <input
+                  type="radio"
+                  name="outcome"
+                  value="success"
+                  checked={filters.outcome === "success"}
+                  onChange={(e) => {
+                    onFilterChange("outcome", e.target.value)
+                    setActiveFilter(null)
+                  }}
+                  className="hidden"
+                />
+                <Activity className="h-3.5 w-3.5 text-green-500" />
+                <span className="text-xs text-green-500">Success</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer p-1 hover:bg-accent rounded">
+                <input
+                  type="radio"
+                  name="outcome"
+                  value="failure"
+                  checked={filters.outcome === "failure"}
+                  onChange={(e) => {
+                    onFilterChange("outcome", e.target.value)
+                    setActiveFilter(null)
+                  }}
+                  className="hidden"
+                />
+                <Minus className="h-3.5 w-3.5 text-red-500" />
+                <span className="text-xs text-red-500">Failure</span>
+              </label>
+            </div>
+            {filters.outcome !== "all" && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onFilterChange("outcome", "all")
+                  setActiveFilter(null)
+                }} 
+                className="w-full mt-3 text-xs"
               >
                 Clear
               </Button>
