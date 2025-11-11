@@ -68,7 +68,7 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
 
   const pct = revive.Chance != null ? `${Math.round(revive.Chance)}%` : "—"
 
-  // Format timestamp: Today → 08:26 AM, Older → 11-11-2025 08:25 AM
+  // Format timestamp
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp * 1000)
     const now = new Date()
@@ -94,6 +94,9 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
     }
   }
 
+  // Only show skill gain if revive was SUCCESS and gain > 0
+  const showSkillGain = revive.result === "success" && skillGain != null && skillGain > 0
+
   return (
     <div
       onClick={onClick}
@@ -117,12 +120,12 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         )}
       </div>
 
-      {/* Skill + Gain */}
+      {/* Skill + Gain (ONLY on SUCCESS) */}
       <div className="text-muted-foreground flex items-center gap-1.5">
         {revive.reviver.skill != null ? (
           <>
             <span>{revive.reviver.skill.toFixed(2)}</span>
-            {skillGain != null && skillGain > 0 && (
+            {showSkillGain && (
               <span className="flex items-center gap-0.5 text-[10px] text-green-500 font-medium">
                 <TrendingUp className="h-3 w-3" />
                 +{skillGain.toFixed(2)}
@@ -174,7 +177,7 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         </div>
       </div>
 
-      {/* OUTCOME ICON – RESTORED */}
+      {/* OUTCOME ICON */}
       <div className="flex justify-center items-center">
         {revive.result === "success" ? (
           <Activity className="h-4 w-4 text-green-500" />
@@ -223,6 +226,8 @@ export function ReviveList({ revives }: ReviveListProps) {
         <ReviveCard
           key={`${revive.timestamp}-${index}`}
           revive={revive}
+          // Optional: pass skillGain from parent if calculated there
+          // skillGain={calculateSkillGain(revive)}
         />
       ))}
       {revives.length === 0 && (
