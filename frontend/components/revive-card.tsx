@@ -43,27 +43,33 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
     }
   }
 
+  // Color based on Likelihood (used only for % badge)
   const getLikelihoodColor = (likelihood: string) => {
     switch (likelihood) {
-      case "Low": return "bg-red-500/10 text-red-500 border-red-500/30"
-      case "Medium": return "bg-yellow-500/10 text-yellow-500 border-yellow-500/30"
-      case "High": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
-      case "Very High": return "bg-green-500/10 text-green-500 border-green-500/30"
+      case "Low": return "bg-red-500/15 text-red-500"
+      case "Medium": return "bg-yellow-500/15 text-yellow-500"
+      case "High": return "bg-emerald-500/15 text-emerald-500"
+      case "Very High": return "bg-green-500/15 text-green-500"
       default: return "bg-muted text-muted-foreground"
     }
   }
+
+  // Format percentage: no decimals, clean look
+  const pct = revive.Chance != null ? `${Math.round(revive.Chance)}%` : "—"
 
   return (
     <div
       onClick={onClick}
       className={`grid grid-cols-[1.2fr_1.2fr_0.6fr_1.2fr_1.2fr_1.2fr_0.8fr_1fr_0.8fr_1.2fr] gap-3 px-2 sm:px-4 py-2.5 text-sm hover:bg-accent/30 transition-colors border-b border-border/50 cursor-pointer ${isSelected ? "bg-accent/50" : ""}`}
     >
+      {/* Reviver */}
       <div className="truncate">
         <a href={getTornProfileUrl(revive.reviver.id)} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline font-medium">
           {revive.reviver.name || revive.reviver.id}
         </a>
       </div>
 
+      {/* Reviver Faction */}
       <div className="truncate text-muted-foreground">
         {revive.reviver.faction ? (
           <a href={getTornFactionUrl(revive.reviver.faction.id)} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-foreground transition-colors">
@@ -74,6 +80,7 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         )}
       </div>
 
+      {/* Skill + Gain */}
       <div className="text-muted-foreground flex items-center gap-1.5">
         {revive.reviver.skill != null ? (
           <>
@@ -90,12 +97,14 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         )}
       </div>
 
+      {/* Target */}
       <div className="truncate">
         <a href={getTornProfileUrl(revive.target.id)} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline font-medium">
           {revive.target.name || revive.target.id}
         </a>
       </div>
 
+      {/* Target Faction */}
       <div className="truncate text-muted-foreground">
         {revive.target.faction ? (
           <a href={getTornFactionUrl(revive.target.faction.id)} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-foreground transition-colors">
@@ -106,8 +115,10 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         )}
       </div>
 
+      {/* Hospitalized By */}
       <div className="truncate text-muted-foreground">{revive.target.hospital_reason}</div>
 
+      {/* Category */}
       <div className="flex items-center gap-1">
         {revive.Category && (
           <Badge variant="outline" className={`text-xs flex items-center gap-1 ${getCategoryColor(revive.Category)}`}>
@@ -117,28 +128,25 @@ export function ReviveCard({ revive, skillGain, isSelected = false, onClick }: R
         )}
       </div>
 
-      <div className="flex items-center gap-1">
-        {revive.Likelihood && (
-          <Badge variant="outline" className={`text-xs ${getLikelihoodColor(revive.Likelihood)}`}>
-            {revive.Likelihood}
-          </Badge>
-        )}
+      {/* SUCCESS % ONLY – Color-coded by Likelihood */}
+      <div className="flex justify-center">
+        <div
+          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getLikelihoodColor(revive.Likelihood || "Low")}`}
+        >
+          {pct}
+        </div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      {/* Outcome */}
+      <div className="flex justify-center items-center">
         {revive.result === "success" ? (
-          <>
-            <Activity className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="capitalize text-xs border-green-500/50 text-green-500">Success</Badge>
-          </>
+          <Activity className="h-4 w-4 text-green-500" />
         ) : (
-          <>
-            <Minus className="h-4 w-4 text-red-500" />
-            <Badge variant="outline" className="capitalize text-xs border-red-500/50 text-red-500">Failure</Badge>
-          </>
+          <Minus className="h-4 w-4 text-red-500" />
         )}
       </div>
 
+      {/* Timestamp */}
       <div className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(revive.timestamp)}</div>
     </div>
   )

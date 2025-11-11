@@ -1,4 +1,5 @@
-// components/revive/revive-table/revive-table-header.tsx
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Search } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
@@ -50,6 +51,7 @@ export function ReviveTableHeader({
     targetFaction: useRef<HTMLInputElement>(null),
   }
 
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -97,7 +99,10 @@ export function ReviveTableHeader({
       {/* Reviver */}
       <div className="relative flex items-center gap-1">
         <span>Reviver</span>
-        <button onClick={(e) => { e.stopPropagation(); handleFilterClick("reviverName", inputRefs.reviverName) }} className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("reviverName") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleFilterClick("reviverName", inputRefs.reviverName) }} 
+          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("reviverName") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+        >
           <Filter className="h-3 w-3" />
         </button>
         <SortIcon field="skill" />
@@ -125,7 +130,7 @@ export function ReviveTableHeader({
                   className="p-1 hover:bg-accent rounded cursor-pointer text-sm"
                   onClick={() => {
                     onFilterChange("reviverName", name)
-                    setActiveFilter(null)
+                    setActiveFilter(null)  // Close after selection
                   }}
                 >
                   {name}
@@ -133,7 +138,15 @@ export function ReviveTableHeader({
               ))}
             </div>
             {filters.reviverName && (
-              <Button variant="outline" size="sm" onClick={() => onFilterChange("reviverName", "")} className="w-full mt-2 text-xs">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onFilterChange("reviverName", "")
+                  setActiveFilter(null)  // Close on clear
+                }} 
+                className="w-full mt-2 text-xs"
+              >
                 Clear
               </Button>
             )}
@@ -144,7 +157,10 @@ export function ReviveTableHeader({
       {/* Reviver Faction */}
       <div className="relative flex items-center gap-1">
         <span>Faction</span>
-        <button onClick={(e) => { e.stopPropagation(); handleFilterClick("reviverFaction", inputRefs.reviverFaction) }} className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("reviverFaction") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleFilterClick("reviverFaction", inputRefs.reviverFaction) }} 
+          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("reviverFaction") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+        >
           <Filter className="h-3 w-3" />
         </button>
         {activeFilter === "reviverFaction" && (
@@ -166,13 +182,28 @@ export function ReviveTableHeader({
             </div>
             <div className="max-h-40 overflow-y-auto mt-2">
               {getFilteredOptions(uniqueValues.reviverFactions, searchQueries.reviverFaction || "").map(f => (
-                <div key={f} className="p-1 hover:bg-accent rounded cursor-pointer text-sm" onClick={() => { onFilterChange("reviverFaction", f); setActiveFilter(null) }}>
+                <div 
+                  key={f} 
+                  className="p-1 hover:bg-accent rounded cursor-pointer text-sm" 
+                  onClick={() => {
+                    onFilterChange("reviverFaction", f)
+                    setActiveFilter(null)  // Close after selection
+                  }}
+                >
                   {f}
                 </div>
               ))}
             </div>
             {filters.reviverFaction && (
-              <Button variant="outline" size="sm" onClick={() => onFilterChange("reviverFaction", "")} className="w-full mt-2 text-xs">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onFilterChange("reviverFaction", "")
+                  setActiveFilter(null)  // Close on clear
+                }} 
+                className="w-full mt-2 text-xs"
+              >
                 Clear
               </Button>
             )}
@@ -188,7 +219,10 @@ export function ReviveTableHeader({
       {/* Target */}
       <div className="relative flex items-center gap-1">
         <span>Target</span>
-        <button onClick={(e) => { e.stopPropagation(); handleFilterClick("targetName", inputRefs.targetName) }} className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("targetName") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleFilterClick("targetName", inputRefs.targetName) }} 
+          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("targetName") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+        >
           <Filter className="h-3 w-3" />
         </button>
         {activeFilter === "targetName" && (
@@ -210,13 +244,28 @@ export function ReviveTableHeader({
             </div>
             <div className="max-h-40 overflow-y-auto mt-2">
               {getFilteredOptions(uniqueValues.targets, searchQueries.targetName || "").map(t => (
-                <div key={t} className="p-1 hover:bg-accent rounded cursor-pointer text-sm" onClick={() => { onFilterChange("targetName", t); setActiveFilter(null) }}>
+                <div 
+                  key={t} 
+                  className="p-1 hover:bg-accent rounded cursor-pointer text-sm" 
+                  onClick={() => {
+                    onFilterChange("targetName", t)
+                    setActiveFilter(null)  // Close after selection
+                  }}
+                >
                   {t}
                 </div>
               ))}
             </div>
             {filters.targetName && (
-              <Button variant="outline" size="sm" onClick={() => onFilterChange("targetName", "")} className="w-full mt-2 text-xs">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onFilterChange("targetName", "")
+                  setActiveFilter(null)  // Close on clear
+                }} 
+                className="w-full mt-2 text-xs"
+              >
                 Clear
               </Button>
             )}
@@ -227,7 +276,10 @@ export function ReviveTableHeader({
       {/* Target Faction */}
       <div className="relative flex items-center gap-1">
         <span>Faction</span>
-        <button onClick={(e) => { e.stopPropagation(); handleFilterClick("targetFaction", inputRefs.targetFaction) }} className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("targetFaction") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleFilterClick("targetFaction", inputRefs.targetFaction) }} 
+          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("targetFaction") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+        >
           <Filter className="h-3 w-3" />
         </button>
         {activeFilter === "targetFaction" && (
@@ -249,13 +301,28 @@ export function ReviveTableHeader({
             </div>
             <div className="max-h-40 overflow-y-auto mt-2">
               {getFilteredOptions(uniqueValues.targetFactions, searchQueries.targetFaction || "").map(f => (
-                <div key={f} className="p-1 hover:bg-accent rounded cursor-pointer text-sm" onClick={() => { onFilterChange("targetFaction", f); setActiveFilter(null) }}>
+                <div 
+                  key={f} 
+                  className="p-1 hover:bg-accent rounded cursor-pointer text-sm" 
+                  onClick={() => {
+                    onFilterChange("targetFaction", f)
+                    setActiveFilter(null)  // Close after selection
+                  }}
+                >
                   {f}
                 </div>
               ))}
             </div>
             {filters.targetFaction && (
-              <Button variant="outline" size="sm" onClick={() => onFilterChange("targetFaction", "")} className="w-full mt-2 text-xs">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onFilterChange("targetFaction", "")
+                  setActiveFilter(null)  // Close on clear
+                }} 
+                className="w-full mt-2 text-xs"
+              >
                 Clear
               </Button>
             )}
@@ -270,8 +337,17 @@ export function ReviveTableHeader({
       {/* Likelihood */}
       <div className="relative flex items-center gap-1">
         <span>Likelihood</span>
-        <button onClick={(e) => { e.stopPropagation(); handleFilterClick("successPercent") }} className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("successPercent") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleFilterClick("successPercent") }} 
+          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("successPercent") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+        >
           <Filter className="h-3 w-3" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onSort("chance") }}
+          className="flex items-center cursor-pointer hover:text-foreground transition-colors"
+        >
+          <SortIcon field="chance" />
         </button>
         {activeFilter === "successPercent" && (
           <div ref={dropdownRef} className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-md shadow-lg z-20 p-3">
@@ -281,7 +357,10 @@ export function ReviveTableHeader({
             </div>
             <select
               value={filters.successPercent}
-              onChange={(e) => onFilterChange("successPercent", e.target.value)}
+              onChange={(e) => {
+                onFilterChange("successPercent", e.target.value)
+                setActiveFilter(null)  // Close after selection
+              }}
               className="w-full px-2 py-1 text-sm border rounded bg-background mb-2"
             >
               {successPercents.map(p => (
@@ -289,7 +368,15 @@ export function ReviveTableHeader({
               ))}
             </select>
             {filters.successPercent !== "All" && (
-              <Button variant="outline" size="sm" onClick={() => onFilterChange("successPercent", "All")} className="w-full text-xs">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onFilterChange("successPercent", "All")
+                  setActiveFilter(null)  // Close on clear
+                }} 
+                className="w-full text-xs"
+              >
                 Clear
               </Button>
             )}
@@ -300,7 +387,10 @@ export function ReviveTableHeader({
       {/* Outcome */}
       <div className="relative flex items-center gap-1">
         <span>Outcome</span>
-        <button onClick={(e) => { e.stopPropagation(); handleFilterClick("outcome") }} className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("outcome") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleFilterClick("outcome") }} 
+          className={`h-4 w-4 flex items-center justify-center rounded-sm transition-colors ${hasActiveFilter("outcome") ? "text-blue-500" : "opacity-50 hover:opacity-100"}`}
+        >
           <Filter className="h-3 w-3" />
         </button>
         {activeFilter === "outcome" && (
@@ -311,7 +401,10 @@ export function ReviveTableHeader({
             </div>
             <select
               value={filters.outcome}
-              onChange={(e) => onFilterChange("outcome", e.target.value)}
+              onChange={(e) => {
+                onFilterChange("outcome", e.target.value)
+                setActiveFilter(null)  // Close after selection
+              }}
               className="w-full px-2 py-1 text-sm border rounded bg-background mb-2"
             >
               <option value="all">All</option>
@@ -319,7 +412,15 @@ export function ReviveTableHeader({
               <option value="failure" className="text-red-500">Failure</option>
             </select>
             {filters.outcome !== "all" && (
-              <Button variant="outline" size="sm" onClick={() => onFilterChange("outcome", "all")} className="w-full text-xs">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onFilterChange("outcome", "all")
+                  setActiveFilter(null)  // Close on clear
+                }} 
+                className="w-full text-xs"
+              >
                 Clear
               </Button>
             )}

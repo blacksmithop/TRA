@@ -173,6 +173,7 @@ export function ReviveTable({
       "Hospitalized By": r.target.hospital_reason,
       Category: r.Category || "N/A",
       "Success %": `${r.success_chance}%`,
+      "Likelihood": `${r.Likelihood} (${r.Chance.toFixed(2)}%)`,
       Outcome: r.result === "success" ? "Success" : "Failure",
       Timestamp: new Date(r.timestamp * 1000).toLocaleString(),
     }))
