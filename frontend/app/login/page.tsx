@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background overflow-hidden">
-      <div className="w-full max-w-md space-y-8 px-4 py-8">
+      <div className="w-full max-w-md space-y-8 px-4 py-8 pb-20">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-foreground">Login</h1>
           <p className="text-muted-foreground">Enter your Torn API key to continue</p>
@@ -52,6 +52,13 @@ export default function LoginPage() {
             Continue
           </Button>
 
+          <div className="pt-4 border-t border-border">
+            <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+              <li>Your API key is stored securely in your browser and never sent to our servers.</li>
+              <li>Data is cached for 2 hours to avoid hitting rate limits.</li>
+            </ul>
+          </div>
+
           <div className="text-center space-y-4">
             <a
               href="https://www.torn.com/preferences.php#tab=api?step=addNewKey&user=basic,personalstats,bars,revives,revivesfull&title=TornReviveApp"
@@ -62,7 +69,7 @@ export default function LoginPage() {
               Get your Custom API Key
             </a>
             
-            <div className="space-y-3">
+            <div className="space-y-3 mb-8">
               <span className="text-sm font-medium text-foreground">API Scope:</span>
               <div className="flex flex-wrap justify-center gap-2 mt-2">
                 <Badge className="rounded-full px-3 py-1.5 bg-gray-100 text-gray-800 border-2 border-gray-400 hover:bg-gray-600 hover:text-white hover:scale-105 transition-all duration-200">
