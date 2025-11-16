@@ -15,7 +15,7 @@ class ApiErrorResponse(BaseModel):
 api_config = TornApiConfig()
 # Create base storage without TTL (will be set per request)
 base_storage = hishel.RedisStorage(
-    client=Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    client=Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT), ttl=7200.0
 )
 
 BASE_HEADERS = {"User-Agent": "TornApiClient/1.0"}
