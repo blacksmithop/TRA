@@ -2,7 +2,6 @@ import { fetchRevives } from "./api"
 import type { Revive, RevivesResponse } from "./types"
 
 const DELAY_BETWEEN_FETCHES_MS = 3000
-const MAX_INITIAL_BATCHES = 5
 
 export interface ProgressiveLoadOptions {
   onBatchLoaded: (revives: Revive[], isComplete: boolean) => void
@@ -17,14 +16,12 @@ export async function loadRevivesProgressively(
   userId: number,
   options: ProgressiveLoadOptions
 ) {
-
   const { onBatchLoaded, onError } = options
   const allRevives: Revive[] = []
   const seenIds = new Set<number>()
 
   try {
     console.log("[v0] Starting progressive revives load – initial batch")
-
     const initialResponse: RevivesResponse = await fetchRevives(userId)
 
     if (!initialResponse.revives?.length) {
@@ -39,6 +36,7 @@ export async function loadRevivesProgressively(
         allRevives.push(revive)
       }
     }
+
     console.log("[v0] Initial batch loaded:", allRevives.length, "unique revives")
     onBatchLoaded([...allRevives], false)
 
@@ -49,23 +47,17 @@ export async function loadRevivesProgressively(
     let batchNumber = 2
 
     while (true) {
-      if (batchNumber > MAX_INITIAL_BATCHES) {
-        console.log(`[v0] Reached max initial batches (${MAX_INITIAL_BATCHES}) – stopping for lazy loading`)
-        onBatchLoaded([...allRevives], false)
-        break
-      }
-
       console.log("[v0] Waiting 3 seconds before next fetch...")
       await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_FETCHES_MS))
 
+      // Stop if the to_timestamp hasn't changed (indicates no progress / possible loop)
       if (oldestTimestamp === previousToTimestamp && batchNumber > 2) {
-        console.log("[v0] to_timestamp unchanged – stopping")
+        console.log("[v0] to_timestamp unchanged – stopping to prevent potential infinite loop")
         onBatchLoaded([...allRevives], true)
         break
       }
 
       console.log(`[v0] Fetching batch ${batchNumber} with to_timestamp:`, new Date(oldestTimestamp * 1000).toISOString())
-
       const batchResponse: RevivesResponse = await fetchRevives(userId, oldestTimestamp)
 
       if (!batchResponse.revives?.length) {
@@ -84,7 +76,7 @@ export async function loadRevivesProgressively(
       }
 
       if (newRevivesCount === 0) {
-        console.log("[v0] No new revives (duplicates) – stopping")
+        console.log("[v0] No new revives (all duplicates) – assuming complete")
         onBatchLoaded([...allRevives], true)
         break
       }
@@ -95,6 +87,7 @@ export async function loadRevivesProgressively(
       previousToTimestamp = oldestTimestamp
       oldestTimestamp = Math.min(...batchResponse.revives.map(r => r.timestamp))
       console.log("[v0] Next to_timestamp:", oldestTimestamp, new Date(oldestTimestamp * 1000).toISOString())
+
       batchNumber++
     }
   } catch (error) {
